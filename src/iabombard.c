@@ -78,6 +78,42 @@ static int		isoutofrange(unsigned int x, unsigned int y)
 	return (x >= MAP_WIDTH || y >= MAP_HEIGHT);
 }
 
+void	random_move(t_player *player, char **map)
+{
+	int				timeout;
+	unsigned int	x;
+	unsigned int	y;
+
+	timeout = 10;
+	while (timeout)
+	{
+		if (isoutofrange(player->pos.x - 1, player->pos.y))
+			x = player->pos.x + 1;
+		else if (isoutofrange(player->pos.x + 1, player->pos.y))
+			x = player->pos.x - 1;
+		else
+			x = player->pos.x + rand() % 3 - 1;
+		if (isoutofrange(player->pos.x, player->pos.y - 1))
+			y = player->pos.y + 1;
+		else if (isoutofrange(player->pos.x, player->pos.y + 1))
+			y = player->pos.y - 1;
+		else
+			y = player->pos.y + (x == player->pos.x ? rand() % 3 - 1 : 0);
+		if (!isoutofrange(x, y))
+		{
+			if (isempty(map[y][x]))
+			{
+				map[player->pos.y][player->pos.x] = MAP_EMPTYCASE;
+				map[y][x] = player->id;
+				player->pos.x = x;
+				player->pos.y = y;
+				break ;
+			}
+		}
+		timeout -= 1;
+	}
+}
+
 void	move_player(t_player *player, t_pos *target, char **map)
 {
 	if (isoutofrange(target->x, target->y))
@@ -98,6 +134,8 @@ void	move_player(t_player *player, t_pos *target, char **map)
 	else if (target->y > player->pos.y &&
 		map[player->pos.y + 1][player->pos.x] == MAP_EMPTYCASE)
 		player->pos.y += 1;
+	else
+		random_move(player, map);
 	map[player->pos.y][player->pos.x] = player->id;
 }
 
@@ -149,38 +187,6 @@ void	ia(t_context *context)
 	free(enemy);
 
 	/*
-	int				timeout;
-	unsigned int	x;
-	unsigned int	y;
-
-	timeout = 10;
-	while (timeout)
-	{
-		if (isoutofrange(context->player.pos.x - 1, context->player.pos.y))
-			x = context->player.pos.x + 1;
-		else if (isoutofrange(context->player.pos.x + 1, context->player.pos.y))
-			x = context->player.pos.x - 1;
-		else
-			x = context->player.pos.x + rand() % 3 - 1;
-		if (isoutofrange(context->player.pos.x, context->player.pos.y - 1))
-			y = context->player.pos.y + 1;
-		else if (isoutofrange(context->player.pos.x, context->player.pos.y + 1))
-			y = context->player.pos.y - 1;
-		else
-			y = context->player.pos.y + (x == context->player.pos.x ? rand() % 3 - 1 : 0);
-		if (!isoutofrange(x, y))
-		{
-			if (isempty(context->map[y][x]))
-			{
-				context->map[context->player.pos.y][context->player.pos.x] = MAP_EMPTYCASE;
-				context->map[y][x] = context->player.id;
-				context->player.pos.x = x;
-				context->player.pos.y = y;
-				break ;
-			}
-		}
-		timeout -= 1;
-	}
 	*/
 }
 

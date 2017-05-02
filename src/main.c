@@ -112,11 +112,38 @@ int		isdead(t_player *player, char **map)
 	return (enemycount >= 2);
 }
 
+int		last_team_standing(char **map)
+{
+	char			team;
+	unsigned int	x;
+	unsigned int	y;
+
+	team = MAP_EMPTYCASE;
+	y = 0;
+	while (y < MAP_HEIGHT)
+	{
+		x = 0;
+		while (x < MAP_WIDTH)
+		{
+			if (map[y][x] != team)
+			{
+				if (team == MAP_EMPTYCASE)
+					team = map[y][x];
+				else
+					return (0);
+			}
+			x += 1;
+		}
+		y += 1;
+	}
+	return (1);
+}
+
 void	loop(t_context *context)
 {
 	int		die = 0;
 
-	while (!die || (context->prime && context->shm->state != GAMESTATE_OVER))
+	while (1)
 	{
 		sem_wait(context->sem_id);
 		if (context->shm->state == GAMESTATE_OVER ||
@@ -126,7 +153,11 @@ void	loop(t_context *context)
 			ia(context);
 		if (context->prime)
 			display(context->shm);
+		if (last_team_standing(context->map))
+			context->shm->state = GAMESTATE_OVER;
 		sem_post(context->sem_id);
+		if (die && (!context->prime || context->shm->state))
+			break ;
 		usleep(200000);
 
 		//static int timeout = 10;
