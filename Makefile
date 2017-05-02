@@ -32,8 +32,8 @@ $(BUILD_DIR)/%.o:$(SRC_DIR)/%.c
 	@$(CC) $(FLAGS) -c $< $(INCLUDES) -o $@
 
 $(LIBS_BIN):
-	@make -c $(DIR_LIBFT)
-	@make -c $(DIR_LIST)
+	@make -C $(DIR_LIBFT)
+	@make -C $(DIR_LIST)
 
 $(NAME):$(LIBS_BIN) $(OBJ)
 	@$(CC) $(FLAGS) $(OBJ) $(LIBS) -o $@
@@ -44,5 +44,7 @@ clean:
 
 fclean:clean
 	@rm -f $(NAME)
+	@make $@ -C $(DIR_LIBFT)
+	@make $@ -C $(DIR_LIST)
 
 re: fclean all
