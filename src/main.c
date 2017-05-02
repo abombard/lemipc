@@ -51,8 +51,8 @@ void	end(t_context *context)
 	sem_detach(context->sem_id);
 	if (context->prime)
 	{
-		sem_erase(context->sem_id);
-		shm_erase(context->shmfd);
+		sem_erase();
+		shm_erase();
 	}
 }
 
@@ -128,21 +128,21 @@ void	ia(t_player *player, char **map)
 
 int		isdead(t_player *player, char **map)
 {
-	static t_pos	delta[] = {
+	static int		delta[][2] = {
 		{ -1, -1 }, { -1,  0 }, { -1,  1 },
 		{  0, -1 }, {  0,  0 }, {  0,  1 },
 		{  1, -1 }, {  1,  0 }, {  1,  1 }
 	};
 	t_pos			p;
 	int				enemycount;
-	int				i;
+	unsigned int	i;
 
 	enemycount = 0;
 	i = 0;
 	while (i < sizeof(delta) / sizeof(delta[0]))
 	{
-		p.x = player->pos.x + delta[i].x;
-		p.y = player->pos.y + delta[i].y;
+		p.x = (unsigned int)((int)player->pos.x + delta[i][0]);
+		p.y = (unsigned int)((int)player->pos.y + delta[i][1]);
 		if (!isoutofrange(p.x, p.y))
 		{
 			if (isenemy(map[p.y][p.x], player))
@@ -181,7 +181,7 @@ int		main(int argc, char **argv)
 		return (2);
 	}
 
-	srand(time(NULL));
+	srand((unsigned int)time(NULL));
 	die = 0;
 	init(&context);
 	sem_wait(context.sem_id);

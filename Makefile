@@ -1,6 +1,6 @@
 CC=clang
-FLAGS=
 FLAGS42=-Wall -Wextra -Werror -Wconversion
+FLAGS=$(FLAGS42)
 
 NAME=lemipc
 

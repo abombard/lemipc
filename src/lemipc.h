@@ -52,7 +52,7 @@ typedef struct	s_shm
 # define IPC_SEMNAME	"/ipc_semname"
 
 void	shm_init(int *shmfd, int *created);
-void	shm_erase(int shmfd);
+void	shm_erase(void);
 
 void	shm_alloc(t_shm **shm, int shmfd);
 void	shm_free(t_shm *shm);
@@ -61,7 +61,7 @@ void	shm_link(char *map[MAP_HEIGHT], t_shm *shm);
 
 void	sem_attach(sem_t **sem_id, int prime);
 void	sem_detach(sem_t *sem_id);
-void	sem_erase(sem_t *sem_id);
+void	sem_erase(void);
 
 void	mq_attach(char teamid, mqd_t *mq, int *created);
 void	mq_detach(mqd_t mq);

@@ -21,8 +21,8 @@ void	player_init(t_player *player, char *map[MAP_HEIGHT], char teamid)
 	player->prime = created;
 	player->id = teamid;
 	player->mq = mq;
-	player->pos.x = x;
-	player->pos.y = y;
+	player->pos.x = (unsigned int)x;
+	player->pos.y = (unsigned int)y;
 	player->task.id = PLAYERTASK_UNDEFINED;
 }
 

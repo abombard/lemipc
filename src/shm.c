@@ -28,7 +28,7 @@ void	shm_init(int *shmfd, int *prime)
 	*shmfd = fd;
 }
 
-void	shm_erase(int shmfd)
+void	shm_erase(void)
 {
 	if (shm_unlink(IPC_OBJPATH))
 	{

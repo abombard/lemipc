@@ -24,7 +24,7 @@ void	sem_detach(sem_t *sem_id)
 	}
 }
 
-void	sem_erase(sem_t *sem_id)
+void	sem_erase(void)
 {
 	if (sem_unlink(IPC_SEMNAME))
 	{
