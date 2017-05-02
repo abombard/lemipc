@@ -112,7 +112,7 @@ int		isdead(t_player *player, char **map)
 	return (enemycount >= 2);
 }
 
-int		last_team_standing(char **map)
+int		last_team_standing(char **map, char *winner)
 {
 	char			team;
 	unsigned int	x;
@@ -136,6 +136,7 @@ int		last_team_standing(char **map)
 		}
 		y += 1;
 	}
+	*winner = team;
 	return (1);
 }
 
@@ -153,8 +154,12 @@ void	loop(t_context *context)
 			ia(context);
 		if (context->prime)
 			display(context->shm);
-		if (last_team_standing(context->map))
+		char winner;
+		if (last_team_standing(context->map, &winner))
+		{
 			context->shm->state = GAMESTATE_OVER;
+			printf("Winner: %c\n", winner);
+		}
 		sem_post(context->sem_id);
 		if (die && (!context->prime || context->shm->state))
 			break ;
