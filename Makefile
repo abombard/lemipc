@@ -7,7 +7,7 @@ NAME=lemipc
 DIR_LIBFT=libs/libft
 DIR_LIST=libs/list
 LIBS_BIN=$(DIR_LIBFT)/libft.a $(DIR_LIST)/liblist.a
-LIBS=-L libs/libft/ -lft -L libs/list/ -llist -lpthread -lrt
+LIBS=-L libs/libft/ -lft -L libs/list/ -llist -lpthread -lrt -lm
 
 SRC_DIR=src
 INCLUDES=-I ./ -I$(SRC_DIR) -I $(DIR_LIBFT) -I $(DIR_LIST)

@@ -7,13 +7,13 @@ static void	mqname_create(char id, char name[MQNAME_SIZE + 1])
 	name[MQNAME_SIZE] = '\0';
 }
 
-void	mq_attach(char teamid, mqd_t *mq, int *created)
+void	mq_attach(char team, mqd_t *mq, int *created)
 {
 	mqd_t			mqid;
 	char			mqname[MQNAME_SIZE + 1];
 	struct mq_attr	attr;
 
-	mqname_create(teamid, mqname);
+	mqname_create(team, mqname);
 	attr.mq_flags = 0;
 	attr.mq_maxmsg = 10;
 	attr.mq_msgsize = 1024;

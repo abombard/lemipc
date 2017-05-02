@@ -65,7 +65,7 @@ void	shm_link(char *map[MAP_HEIGHT], t_shm *shm)
 	i = 0;
 	while (i < MAP_HEIGHT)
 	{
-		map[i] = shm->m + (i + 1) * TRUEMAP_WIDTH;
+		map[i] = shm->m + (i + 1) * TRUEMAP_WIDTH + 1;
 		i += 1;
 	}
 }

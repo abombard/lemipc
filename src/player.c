@@ -1,25 +1,25 @@
 #include "lemipc.h"
 
-void	player_init(t_player *player, char *map[MAP_HEIGHT], char teamid)
+void	player_init(t_player *player, char *map[MAP_HEIGHT], char team)
 {
 	mqd_t	mq;
 	int		created;
 	int		x;
 	int		y;
 
-	mq_attach(teamid, &mq, &created);
+	mq_attach(team, &mq, &created);
 	while (1)
 	{
 		x = rand() % MAP_WIDTH;
 		y = rand() % MAP_HEIGHT;
 		if (map[y][x] == MAP_EMPTYCASE)
 		{
-			map[y][x] = player->id;
+			map[y][x] = team;
 			break ;
 		}
 	}
 	player->prime = created;
-	player->id = teamid;
+	player->id = team;
 	player->mq = mq;
 	player->pos.x = (unsigned int)x;
 	player->pos.y = (unsigned int)y;

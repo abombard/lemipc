@@ -1,6 +1,6 @@
 #include "lemipc.h"
 
-void	init_shm(t_shm *shm)
+void	init_game(t_shm *shm)
 {
 	char	*line;
 	int		i;
@@ -22,27 +22,22 @@ void	init_shm(t_shm *shm)
 	}
 }
 
-void	init(t_context *context)
+void	init(t_context *context, char team)
 {
-	int		prime;
-	int		shmfd;
-	sem_t	*sem_id;
-	t_shm	*shm;
+	int		created;
 
-	shm_init(&shmfd, &prime);
-	shm_alloc(&shm, shmfd);
-	shm_link(context->map, shm);
-	sem_attach(&sem_id, prime);
-	sem_wait(sem_id);
-	if (prime)
+	shm_init(&context->shmfd, &created);
+	context->prime = created;
+	sem_attach(&context->sem_id, created);
+	sem_wait(context->sem_id);
+	shm_alloc(&context->shm, context->shmfd);
+	shm_link(context->map, context->shm);
+	if (created)
 	{
-		init_shm(shm);
+		init_game(context->shm);
 	}
-	sem_post(sem_id);
-	context->prime = prime;
-	context->shmfd = shmfd;
-	context->shm = shm;
-	context->sem_id = sem_id;
+	player_init(&context->player, context->map, team);
+	sem_post(context->sem_id);
 }
 
 void	end(t_context *context)
@@ -75,14 +70,14 @@ int		isempty(char c)
 	return (c == MAP_EMPTYCASE);
 }
 
-int		isally(char c, t_player *player)
+int		isally(t_player *player, char c)
 {
 	return (c == player->id);
 }
 
-int		isenemy(char c, t_player *player)
+int		isenemy(t_player *player, char c)
 {
-	return (!isempty(c) && !isally(c, player));
+	return (!isempty(c) && !isally(player, c));
 }
 
 int		isoutofrange(unsigned int x, unsigned int y)
@@ -90,8 +85,89 @@ int		isoutofrange(unsigned int x, unsigned int y)
 	return (x >= MAP_WIDTH || y >= MAP_HEIGHT);
 }
 
-void	ia(t_player *player, char **map)
+typedef struct	s_lp
 {
+	unsigned int	x;
+	unsigned int	y;
+	unsigned int	d;
+	char			team;
+}				t_lp;
+
+int		lpcmp(void const *a, void const *b)
+{
+	t_lp	*p1;
+	t_lp	*p2;
+
+	p1 = (t_lp *)a;
+	p2 = (t_lp *)b;
+	return (p1->d < p2->d);
+}
+
+#include <math.h>
+t_lp	*map_find_all(char **map, t_player *player, int (*test)(t_player *, char), size_t *count)
+{
+	t_lp			*ps;
+	size_t			pcount;
+	t_lp			p;
+
+	ps = NULL;
+	pcount = 0;
+	p.y = 0;
+	while (p.y < MAP_HEIGHT)
+	{
+		p.x = 0;
+		while (p.x < MAP_WIDTH)
+		{
+			if (p.x != player->pos.x && p.y != player->pos.y &&
+				test(player, map[p.y][p.x]))
+			{
+				ps = realloc(ps, (pcount + 1) * sizeof(t_lp));
+				if (!ps)
+				{
+					perror("realloc");
+					exit(EXIT_FAILURE);
+				}
+				p.team = map[p.y][p.x];
+				p.d = (unsigned int)sqrt(
+					pow(p.x - player->pos.x, 2) +
+					pow(p.y - player->pos.y, 2));
+				ps[pcount] = p;
+				pcount += 1;
+			}
+			p.x += 1;
+		}
+		p.y += 1;
+	}
+	qsort(ps, pcount, sizeof(t_lp), &lpcmp);
+	*count = pcount;
+	return (ps);
+}
+
+void	ia(t_context *context)
+{
+	t_lp	*ally;
+	size_t	acount;
+	t_lp	*enemy;
+	size_t	ecount;
+
+	ally = map_find_all(context->map, &context->player, &isally, &acount);
+	enemy = map_find_all(context->map, &context->player, &isenemy, &ecount);
+	
+	unsigned int	i;
+
+	for (i = 0; i < acount; i ++)
+	{
+		fprintf(stderr, "Ally %d: %d %d d:%d team:%c\n", i, ally[i].x, ally[i].y, ally[i].d, ally[i].team);
+	}
+	for (i = 0; i < ecount; i ++)
+	{
+		fprintf(stderr, "Enemy %d: %d %d d:%d team:%c\n", i, enemy[i].x, enemy[i].y, enemy[i].d, enemy[i].team);
+	}
+
+	free(ally);
+	free(enemy);
+
+	/*
 	int				timeout;
 	unsigned int	x;
 	unsigned int	y;
@@ -99,31 +175,32 @@ void	ia(t_player *player, char **map)
 	timeout = 10;
 	while (timeout)
 	{
-		if (isoutofrange(player->pos.x - 1, player->pos.y))
-			x = player->pos.x + 1;
-		else if (isoutofrange(player->pos.x + 1, player->pos.y))
-			x = player->pos.x - 1;
+		if (isoutofrange(context->player.pos.x - 1, context->player.pos.y))
+			x = context->player.pos.x + 1;
+		else if (isoutofrange(context->player.pos.x + 1, context->player.pos.y))
+			x = context->player.pos.x - 1;
 		else
-			x = player->pos.x + rand() % 3 - 1;
-		if (isoutofrange(player->pos.x, player->pos.y - 1))
-			y = player->pos.y + 1;
-		else if (isoutofrange(player->pos.x, player->pos.y + 1))
-			y = player->pos.y - 1;
+			x = context->player.pos.x + rand() % 3 - 1;
+		if (isoutofrange(context->player.pos.x, context->player.pos.y - 1))
+			y = context->player.pos.y + 1;
+		else if (isoutofrange(context->player.pos.x, context->player.pos.y + 1))
+			y = context->player.pos.y - 1;
 		else
-			y = player->pos.y + (x == player->pos.x ? rand() % 3 - 1 : 0);
+			y = context->player.pos.y + (x == context->player.pos.x ? rand() % 3 - 1 : 0);
 		if (!isoutofrange(x, y))
 		{
-			if (isempty(map[y][x]))
+			if (isempty(context->map[y][x]))
 			{
-				map[player->pos.y][player->pos.x] = MAP_EMPTYCASE;
-				map[y][x] = player->id;
-				player->pos.x = x;
-				player->pos.y = y;
+				context->map[context->player.pos.y][context->player.pos.x] = MAP_EMPTYCASE;
+				context->map[y][x] = context->player.id;
+				context->player.pos.x = x;
+				context->player.pos.y = y;
 				break ;
 			}
 		}
 		timeout -= 1;
 	}
+	*/
 }
 
 int		isdead(t_player *player, char **map)
@@ -145,7 +222,7 @@ int		isdead(t_player *player, char **map)
 		p.y = (unsigned int)((int)player->pos.y + delta[i][1]);
 		if (!isoutofrange(p.x, p.y))
 		{
-			if (isenemy(map[p.y][p.x], player))
+			if (isenemy(player, map[p.y][p.x]))
 				enemycount += 1;
 		}
 		i += 1;
@@ -153,52 +230,39 @@ int		isdead(t_player *player, char **map)
 	return (enemycount >= 2);
 }
 
-int		loop(t_gamestate gamestate, char **map, t_player *player)
+void	loop(t_context *context)
 {
-	//if (gamestate == GAMESTATE_INIT)
-	//	return (0);
-	if (gamestate == GAMESTATE_OVER)
-		return (1);
-	if (isdead(player, map))
-		return (1);
-	ia(player, map);
+	while (1 /* && (!context->prime || context->gamestate == GAMESTATE_OVER) */)
+	{
+		sem_wait(context->sem_id);
+		if (context->shm->state == GAMESTATE_OVER ||
+			isdead(&context->player, context->map))
+			break ;
+		//if (context->shm->state == GAMESTATE_ON)
+			ia(context);
+		if (context->prime)
+			display(context->shm);
+		sem_post(context->sem_id);
+		usleep(200000);
 
-	static int dieTimeout = 3;
-	if (dieTimeout -- == 0) return 1;
-
-	return (0);
+		//static int timeout = 10;
+		//if (timeout -- == 0) break ;
+	}
 }
 
 int		main(int argc, char **argv)
 {
 	t_context	context;
-	t_player	player;
-	int			die;
 
 	if (argc != 2)
 	{
 		printf("Usage: %s <Team Id>\n", argv[0]);
 		return (2);
 	}
-
 	srand((unsigned int)time(NULL));
-	die = 0;
-	init(&context);
-	sem_wait(context.sem_id);
-	player_init(&player, context.map, argv[1][0]);
-	sem_post(context.sem_id);
-	while (!die /* && (!context.prime || context.gamestate == GAMESTATE_OVER) */)
-	{
-		sem_wait(context.sem_id);
-		die = loop(context.shm->state, context.map, &player);
-		if (context.prime)
-		{
-			display(context.shm);
-		}
-		sem_post(context.sem_id);
-		usleep(200000);
-	}
-	player_erase(&player, context.map);
+	init(&context, argv[1][0]);
+	loop(&context);
+	player_erase(&context.player, context.map);
 	end(&context);
 	return (0);
 }

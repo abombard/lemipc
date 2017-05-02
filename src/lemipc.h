@@ -63,22 +63,9 @@ void	sem_attach(sem_t **sem_id, int prime);
 void	sem_detach(sem_t *sem_id);
 void	sem_erase(void);
 
-void	mq_attach(char teamid, mqd_t *mq, int *created);
+void	mq_attach(char team, mqd_t *mq, int *created);
 void	mq_detach(mqd_t mq);
 void	mq_erase(char id);
-
-/*
-** Process context
-*/
-typedef struct	s_context
-{
-	int			prime;
-	int			shmfd;
-	t_shm		*shm;
-	sem_t		*sem_id;
-
-	char		*map[MAP_HEIGHT];
-}				t_context;
 
 /*
 ** Player specific
@@ -112,7 +99,22 @@ typedef struct	s_player
 	t_task	task;
 }				t_player;
 
-void	player_init(t_player *player, char *map[MAP_HEIGHT], char teamid);
+void	player_init(t_player *player, char *map[MAP_HEIGHT], char team);
 void	player_erase(t_player *player, char **map);
+
+/*
+** Process context
+*/
+typedef struct	s_context
+{
+	int			prime;
+	int			shmfd;
+	t_shm		*shm;
+	sem_t		*sem_id;
+
+	char		*map[MAP_HEIGHT];
+
+	t_player	player;
+}				t_context;
 
 #endif
