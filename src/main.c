@@ -22,7 +22,7 @@ void	init_game(t_shm *shm)
 	}
 }
 
-void	init(t_context *context, char team)
+void	init(t_context *context)
 {
 	int		created;
 
@@ -36,7 +36,6 @@ void	init(t_context *context, char team)
 	{
 		init_game(context->shm);
 	}
-	player_init(&context->player, context->map, team);
 	sem_post(context->sem_id);
 }
 
@@ -143,27 +142,42 @@ int		last_team_standing(char **map, char *winner)
 void	loop(t_context *context)
 {
 	int		die = 0;
+	char	winner;
 
 	while (1)
 	{
 		sem_wait(context->sem_id);
+		if (last_team_standing(context->map, &winner))
+			context->shm->state = GAMESTATE_OVER;
 		if (context->shm->state == GAMESTATE_OVER ||
 			isdead(&context->player, context->map))
 			die = 1;
 		else if (context->shm->state == GAMESTATE_ON)
 			ia(context);
-		if (context->prime)
-			display(context->shm);
-		char winner;
-		if (last_team_standing(context->map, &winner))
-		{
-			context->shm->state = GAMESTATE_OVER;
-			printf("Winner: %c\n", winner);
-		}
 		sem_post(context->sem_id);
-		if (die && (!context->prime || context->shm->state))
+		if (die && (!context->prime))
 			break ;
 		usleep(200000);
+
+		//static int timeout = 10;
+		//if (timeout -- == 0) break ;
+	}
+}
+
+void	loop_display(t_context *context)
+{
+	int		die = 0;
+
+	while (1)
+	{
+		sem_wait(context->sem_id);
+		if (context->shm->state == GAMESTATE_OVER)
+			die = 1;
+		display(context->shm);
+		sem_post(context->sem_id);
+		usleep(200000);
+		if (die)
+			break ;
 
 		//static int timeout = 10;
 		//if (timeout -- == 0) break ;
@@ -180,7 +194,7 @@ int		main(int argc, char **argv)
 		return (2);
 	}
 	srand((unsigned int)time(NULL));
-	init(&context, argv[1][0]);
+	init(&context);
 	if (!ft_strcmp(argv[1], "start"))
 	{
 		sem_wait(context.sem_id);
@@ -193,13 +207,20 @@ int		main(int argc, char **argv)
 		context.shm->state = GAMESTATE_OVER;
 		sem_post(context.sem_id);
 	}
+	else if (!ft_strcmp(argv[1], "display"))
+	{
+		loop_display(&context);
+	}
 	else
 	{
+		sem_wait(context.sem_id);
+		player_init(&context.player, context.map, argv[1][0]);
+		sem_post(context.sem_id);
 		loop(&context);
+		sem_wait(context.sem_id);
+		player_erase(&context.player, context.map);
+		sem_post(context.sem_id);
 	}
-	sem_wait(context.sem_id);
-	player_erase(&context.player, context.map);
-	sem_post(context.sem_id);
 	end(&context);
 	return (0);
 }
