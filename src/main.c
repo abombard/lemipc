@@ -124,11 +124,11 @@ int		last_team_standing(char **map, char *winner)
 		x = 0;
 		while (x < MAP_WIDTH)
 		{
-			if (map[y][x] != team)
+			if (map[y][x] != MAP_EMPTYCASE)
 			{
 				if (team == MAP_EMPTYCASE)
 					team = map[y][x];
-				else
+				else if (team != map[y][x])
 					return (0);
 			}
 			x += 1;
@@ -144,44 +144,40 @@ void	loop(t_context *context)
 	int		die = 0;
 	char	winner;
 
-	while (1)
+	while (!die)
 	{
 		sem_wait(context->sem_id);
 		if (last_team_standing(context->map, &winner))
-			context->shm->state = GAMESTATE_OVER;
+			die = 1;
 		if (context->shm->state == GAMESTATE_OVER ||
 			isdead(&context->player, context->map))
 			die = 1;
 		else if (context->shm->state == GAMESTATE_ON)
 			ia(context);
 		sem_post(context->sem_id);
-		if (die && (!context->prime))
-			break ;
 		usleep(200000);
-
-		//static int timeout = 10;
-		//if (timeout -- == 0) break ;
 	}
 }
 
 void	loop_display(t_context *context)
 {
 	int		die = 0;
+	char	winner;
 
-	while (1)
+	while (!die)
 	{
 		sem_wait(context->sem_id);
-		if (context->shm->state == GAMESTATE_OVER)
+		if (context->shm->state != GAMESTATE_INIT &&
+			last_team_standing(context->map, &winner))
 			die = 1;
 		display(context->shm);
 		sem_post(context->sem_id);
 		usleep(200000);
-		if (die)
-			break ;
 
 		//static int timeout = 10;
 		//if (timeout -- == 0) break ;
 	}
+	printf("Winner %c\n", winner);
 }
 
 int		main(int argc, char **argv)
