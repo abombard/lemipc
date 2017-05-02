@@ -117,4 +117,6 @@ typedef struct	s_context
 	t_player	player;
 }				t_context;
 
+void	ia(t_context *context);
+
 #endif

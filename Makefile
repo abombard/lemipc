@@ -20,6 +20,7 @@ SRC=\
 	sem.c		\
 	mq.c		\
 	player.c	\
+	iabombard.c	\
 
 OBJ=$(addprefix $(BUILD_DIR)/,$(SRC:.c=.o))
 
