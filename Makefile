@@ -18,7 +18,8 @@ SRC=\
 	main.c		\
 	shm.c		\
 	sem.c		\
-	game.c		\
+	mq.c		\
+	player.c	\
 
 OBJ=$(addprefix $(BUILD_DIR)/,$(SRC:.c=.o))
 

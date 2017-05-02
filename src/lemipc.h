@@ -11,7 +11,9 @@
 # include <fcntl.h>
 # include <sys/types.h>
 # include <semaphore.h>
+# include <mqueue.h>
 # include <errno.h>
+# include <time.h>
 
 /*
 ** Game IPC shared between processes
@@ -29,6 +31,10 @@
 # define MAP_BORDERHEIGHT	'|'
 # define MAP_EMPTYCASE	' '
 
+# define MQNAME_BASIS				"/lemipcteam"
+# define MQNAME_BASIS_SIZE	(sizeof("/lemipcteam") - 1)
+# define MQNAME_SIZE		(MQNAME_BASIS_SIZE + 1)
+
 typedef enum	e_gamestate
 {
 	GAMESTATE_INIT = 0,
@@ -36,24 +42,43 @@ typedef enum	e_gamestate
 	GAMESTATE_OVER
 }				t_gamestate;
 
-typedef struct	s_game
+typedef struct	s_shm
 {
 	t_gamestate		state;
 	char			m[MAP_SIZE];
-}				t_game;
+}				t_shm;
 
 # define IPC_OBJPATH	"/ipc_objpath"
 # define IPC_SEMNAME	"/ipc_semname"
 
-void	shm_init(int *shmfd, int *owner);
+void	shm_init(int *shmfd, int *created);
 void	shm_erase(int shmfd);
 
-void	sem_attach(sem_t **sem_id, int owner);
+void	shm_alloc(t_shm **shm, int shmfd);
+void	shm_free(t_shm *shm);
+
+void	shm_link(char *map[MAP_HEIGHT], t_shm *shm);
+
+void	sem_attach(sem_t **sem_id, int prime);
 void	sem_detach(sem_t *sem_id);
 void	sem_erase(sem_t *sem_id);
 
-void	game_alloc(t_game **game, int shmfd);
-void	game_free(t_game *game);
+void	mq_attach(char teamid, mqd_t *mq, int *created);
+void	mq_detach(mqd_t mq);
+void	mq_erase(char id);
+
+/*
+** Process context
+*/
+typedef struct	s_context
+{
+	int			prime;
+	int			shmfd;
+	t_shm		*shm;
+	sem_t		*sem_id;
+
+	char		*map[MAP_HEIGHT];
+}				t_context;
 
 /*
 ** Player specific
@@ -78,22 +103,16 @@ typedef struct	s_task
 	}			un;
 }				t_task;
 
-/*
-** Process context
-*/
-typedef struct	s_context
-{
-	int			owner;
-	int			shmfd;
-	sem_t		*sem_id;
-	t_game		*game;
-}				t_context;
-
 typedef struct	s_player
 {
+	int		prime;
 	char	id;
+	mqd_t	mq;
 	t_pos	pos;
 	t_task	task;
 }				t_player;
+
+void	player_init(t_player *player, char *map[MAP_HEIGHT], char teamid);
+void	player_erase(t_player *player, char **map);
 
 #endif

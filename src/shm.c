@@ -1,6 +1,6 @@
 #include "lemipc.h"
 
-void	shm_init(int *shmfd, int *owner)
+void	shm_init(int *shmfd, int *prime)
 {
 	int		fd;
 
@@ -14,16 +14,16 @@ void	shm_init(int *shmfd, int *owner)
 			perror("shm_open");
 			exit(EXIT_FAILURE);
 		}
-		*owner = 0;
+		*prime = 0;
 	}
 	else
 	{
-		if (ftruncate(fd, sizeof(t_game)))
+		if (ftruncate(fd, sizeof(t_shm)))
 		{
 			perror("ftruncate");
 			exit(EXIT_FAILURE);
 		}
-		*owner = 1;
+		*prime = 1;
 	}
 	*shmfd = fd;
 }
@@ -34,5 +34,38 @@ void	shm_erase(int shmfd)
 	{
 		perror("shm_unlink");
 		exit(EXIT_FAILURE);
+	}
+}
+
+void	shm_alloc(t_shm **shm, int shmfd)
+{
+	*shm = (t_shm *)mmap(NULL, sizeof(t_shm),
+		PROT_READ | PROT_WRITE, MAP_SHARED,
+		shmfd, 0);
+	if (*shm == MAP_FAILED)
+	{
+		perror("mmap");
+		exit(EXIT_FAILURE);
+	}
+}
+
+void	shm_free(t_shm *shm)
+{
+	if (munmap(shm, sizeof(t_shm)))
+	{
+		perror("munmap");
+		exit(EXIT_FAILURE);
+	}
+}
+
+void	shm_link(char *map[MAP_HEIGHT], t_shm *shm)
+{
+	int		i;
+
+	i = 0;
+	while (i < MAP_HEIGHT)
+	{
+		map[i] = shm->m + (i + 1) * TRUEMAP_WIDTH;
+		i += 1;
 	}
 }

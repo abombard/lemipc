@@ -1,11 +1,11 @@
 #include "lemipc.h"
 
-void	sem_attach(sem_t **sem_id, int owner)
+void	sem_attach(sem_t **sem_id, int prime)
 {
 	sem_t	*id;
 	int		flg;
 
-	flg = owner ? O_CREAT | O_EXCL : 0;
+	flg = prime ? O_CREAT | O_EXCL : 0;
 	id = sem_open(IPC_SEMNAME, flg, 0666, 1);
 	if (id == SEM_FAILED)
 	{
