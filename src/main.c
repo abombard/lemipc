@@ -198,7 +198,7 @@ void	loop_display(t_context *context)
 		//static int timeout = 10;
 		//if (timeout -- == 0) break ;
 	}
-	printf("Winner %c\n", winner);
+	fprintf(stderr, "Winner %c\n", winner);
 }
 
 int		main(int argc, char **argv)
@@ -239,6 +239,5 @@ int		main(int argc, char **argv)
 		sem_post(context.sem_id);
 	}
 	end(&context);
-	fprintf(stderr, "%s died\n", argv[1]);
 	return (0);
 }
