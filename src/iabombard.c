@@ -30,11 +30,11 @@ int		lpcmp(void const *a, void const *b)
 
 	p1 = (t_lp *)a;
 	p2 = (t_lp *)b;
-	return (p1->d < p2->d);
+	return ((int)p1->d - (int)p2->d);
 }
 
 #include <math.h>
-t_lp	*map_find_all(char **map, t_player *player, int (*test)(t_player *, char), size_t *count)
+t_lp	*find_all(char **map, t_player *player, int (*test)(t_player *, char), size_t *count)
 {
 	t_lp			*ps;
 	size_t			pcount;
@@ -51,16 +51,16 @@ t_lp	*map_find_all(char **map, t_player *player, int (*test)(t_player *, char), 
 			if (p.x != player->pos.x && p.y != player->pos.y &&
 				test(player, map[p.y][p.x]))
 			{
-				ps = realloc(ps, (pcount + 1) * sizeof(t_lp));
-				if (!ps)
+				if (!(ps = realloc(ps, (pcount + 1) * sizeof(t_lp))))
 				{
 					perror("realloc");
 					exit(EXIT_FAILURE);
 				}
 				p.team = map[p.y][p.x];
-				p.d = (unsigned int)sqrt(
-					pow(p.x - player->pos.x, 2) +
-					pow(p.y - player->pos.y, 2));
+
+				int	x = (int)p.x - (int)player->pos.x;
+				int	y = (int)p.y - (int)player->pos.y;
+				p.d = (unsigned int)sqrt(x * x + y * y);
 				ps[pcount] = p;
 				pcount += 1;
 			}
@@ -73,12 +73,30 @@ t_lp	*map_find_all(char **map, t_player *player, int (*test)(t_player *, char), 
 	return (ps);
 }
 
+size_t	pcount_d(t_lp *ps, size_t pcount, size_t d)
+{
+	size_t	count;
+	size_t	i;
+
+	count = 0;
+	i = 0;
+	while (i < pcount)
+	{
+		if (ps[i].d < d)
+			count += 1;
+		else
+			break ;
+		i += 1;
+	}
+	return (count);
+}
+
 static int		isoutofrange(unsigned int x, unsigned int y)
 {
 	return (x >= MAP_WIDTH || y >= MAP_HEIGHT);
 }
 
-void	random_move(t_player *player, char **map)
+void	random_move(t_player *player, char **map, unsigned int *x1, unsigned int *y1)
 {
 	int				timeout;
 	unsigned int	x;
@@ -87,56 +105,58 @@ void	random_move(t_player *player, char **map)
 	timeout = 10;
 	while (timeout)
 	{
-		if (isoutofrange(player->pos.x - 1, player->pos.y))
-			x = player->pos.x + 1;
-		else if (isoutofrange(player->pos.x + 1, player->pos.y))
-			x = player->pos.x - 1;
-		else
-			x = player->pos.x + rand() % 3 - 1;
-		if (isoutofrange(player->pos.x, player->pos.y - 1))
-			y = player->pos.y + 1;
-		else if (isoutofrange(player->pos.x, player->pos.y + 1))
-			y = player->pos.y - 1;
-		else
-			y = player->pos.y + (x == player->pos.x ? rand() % 3 - 1 : 0);
-		if (!isoutofrange(x, y))
+		x = player->pos.x;
+		y = player->pos.y;
+		x += rand() % 3 - 1;
+		y += x == player->pos.x ? rand() % 3 - 1 : 0;
+		if (!isoutofrange(x, y) && isempty(map[y][x]))
 		{
-			if (isempty(map[y][x]))
-			{
-				map[player->pos.y][player->pos.x] = MAP_EMPTYCASE;
-				map[y][x] = player->id;
-				player->pos.x = x;
-				player->pos.y = y;
-				break ;
-			}
+			*x1 = x;
+			*y1 = y;
+			return ;
 		}
 		timeout -= 1;
 	}
+	*x1 = player->pos.x;
+	*y1 = player->pos.y;
 }
 
-void	move_player(t_player *player, t_pos *target, char **map)
+void	movefront(char **map, t_player *player, t_pos *target)
 {
-	if (isoutofrange(target->x, target->y))
+	unsigned int	x1;
+	unsigned int	y1;
+	unsigned int	x2;
+	unsigned int	y2;
+
+	x1 = player->pos.x;
+	y1 = player->pos.y;
+	x2 = target->x;
+	y2 = target->y;
+	if (isoutofrange(x2, y2))
 	{
-		fprintf(stderr, "Out of range ! %u %u\n", target->x, target->y);
+		fprintf(stderr, "Out of range ! %u %u\n", x2, y2);
 		return ;
 	}
-	map[player->pos.y][player->pos.x] = MAP_EMPTYCASE;
-	if (target->x < player->pos.x &&
-		map[player->pos.y][player->pos.x - 1] == MAP_EMPTYCASE)
-		player->pos.x -= 1;
-	else if (target->x > player->pos.x &&
-		map[player->pos.y][player->pos.x + 1] == MAP_EMPTYCASE)
-		player->pos.x += 1;
-	else if (target->y < player->pos.y &&
-		map[player->pos.y - 1][player->pos.x] == MAP_EMPTYCASE)
-		player->pos.y -= 1;
-	else if (target->y > player->pos.y &&
-		map[player->pos.y + 1][player->pos.x] == MAP_EMPTYCASE)
-		player->pos.y += 1;
+	map[y1][x1] = MAP_EMPTYCASE;
+	if (abs((int)x2 - (int)x1) > abs((int)y2 - (int)y1))
+	{
+		if (x2 < x1 && isempty(map[y1][x1 - 1]))
+			x1 -= 1;
+		else if (x2 > x1 && isempty(map[y1][x1 + 1]))
+			x1 += 1;
+	}
 	else
-		random_move(player, map);
-	map[player->pos.y][player->pos.x] = player->id;
+	{
+		if (y2 < y1 && isempty(map[y1 - 1][x1]))
+			y1 -= 1;
+		else if (y2 > y1 && isempty(map[y1 + 1][x1]))
+			y1 += 1;
+	}
+	if (x1 == player->pos.x && y1 == player->pos.y)
+		random_move(player, map, &x1, &x2);
+	map[y1][x1] = player->id;
+	player->pos.x = x1;
+	player->pos.y = y1;
 }
 
 void	ia(t_context *context)
@@ -151,15 +171,16 @@ void	ia(t_context *context)
 	unsigned int	prio = 1;
 	struct timespec	timeout;
 
-	ally = map_find_all(context->map, &context->player, &isally, &acount);
-	enemy = map_find_all(context->map, &context->player, &isenemy, &ecount);
+	ally = find_all(context->map, &context->player, &isally, &acount);
+	enemy = find_all(context->map, &context->player, &isenemy, &ecount);
 
 	size = mq_timedreceive(context->player.mq, msg, sizeof(msg), &prio, &timeout);
 	if (size != -1)
 	{
+		msg[size] = '\0';
 		t_pos	target;
 		size = sscanf(msg, "%u %u", &target.x, &target.y);
-		move_player(&context->player, &target, context->map);
+		movefront(context->map, &context->player, &target);
 	}
 
 	if (ecount)
@@ -171,6 +192,15 @@ void	ia(t_context *context)
 	}
 
 	/*
+	printf("---------------------------------------------------\n");
+	printf("%c pos %u %u\n", context->player.id, context->player.pos.x, context->player.pos.y);
+
+	printf("pcount_d ally 5 %lu\n", pcount_d(ally, acount, 5));
+	printf("pcount_d enemy 5 %lu\n", pcount_d(enemy, ecount, 5));
+	printf("---------------------------------------------------\n");
+	*/
+
+	printf("-------------------------------------\n");
 	unsigned int	i;
 
 	for (i = 0; i < acount; i ++)
@@ -181,7 +211,6 @@ void	ia(t_context *context)
 	{
 		fprintf(stderr, "Enemy %u: %u %u d:%u team:%c\n", i, enemy[i].x, enemy[i].y, enemy[i].d, enemy[i].team);
 	}
-	*/
 
 	free(ally);
 	free(enemy);
