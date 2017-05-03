@@ -136,8 +136,8 @@ void	loop(t_context *context)
 		else if (context->shm->state == GAMESTATE_ON)
 			ia(context);
 		sem_post(context->sem_id);
-		sleep(5);
-		//usleep(200000);
+		//sleep(5);
+		usleep(200000);
 	}
 }
 
