@@ -92,6 +92,15 @@ bool    get_target_coord(t_context *context, int *targetx, int *targety)
       }
       w++;
     }
+    w = 0;
+    while (w < ecount)
+    {
+      if ((enemy[g].x - 15) < enemy[w].x && (enemy[g].x + 15) > enemy[w].x && (enemy[g].y - 15) < enemy[w].y && (enemy[g].y + 15) > enemy[w].y )
+      {
+        tmpnbally--;
+      }
+      w++;
+    }
     if (tmpnbally > nbally)
     {
       nbally = tmpnbally;
