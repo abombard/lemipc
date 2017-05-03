@@ -64,6 +64,12 @@ void	display(t_shm *shm)
 	printf("\n");
 }
 
+typedef struct	s_deadly
+{
+	char	team;
+	int		count;
+}				t_deadly;
+
 int		isdead(t_player *player, char **map)
 {
 	static int		delta[][2] = {
@@ -72,10 +78,13 @@ int		isdead(t_player *player, char **map)
 		{  1, -1 }, {  1,  0 }, {  1,  1 }
 	};
 	t_pos			p;
-	int				enemycount;
+	t_deadly		*enemy;
+	int				enemy_count;
 	unsigned int	i;
+	unsigned int	j;
 
-	enemycount = 0;
+	enemy = NULL;
+	enemy_count = 0;
 	i = 0;
 	while (i < sizeof(delta) / sizeof(delta[0]))
 	{
@@ -84,11 +93,41 @@ int		isdead(t_player *player, char **map)
 		if (!isoutofrange(p.x, p.y))
 		{
 			if (isenemy(player, map[p.y][p.x]))
-				enemycount += 1;
+			{
+				j = 0;
+				while (j < enemy_count)
+				{
+					if (enemy[j].team == map[p.y][p.x])
+					{
+						enemy[j].count += 1;
+						break ;
+					}
+					j += 1;
+				}
+				if (j == enemy_count)
+				{
+					enemy = realloc(enemy, sizeof(t_deadly) * (enemy_count + 1));
+					if (!enemy)
+					{
+						perror("realloc");
+						exit(EXIT_FAILURE);
+					}
+					enemy[enemy_count].team = map[p.y][p.x];
+					enemy[enemy_count].count = 1;
+					enemy_count += 1;
+				}
+			}
 		}
 		i += 1;
 	}
-	return (enemycount >= 2);
+	j = 0;
+	while (j < enemy_count)
+	{
+		if (enemy[j].count > 1)
+			break ;
+		j += 1;
+	}
+	return (j != enemy_count);
 }
 
 int		last_team_standing(char **map, char *winner)
