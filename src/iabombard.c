@@ -33,7 +33,7 @@ t_lp	*find_all(char **map, t_player *player, int (*test)(t_player *, char), size
 		p.x = 0;
 		while (p.x < MAP_WIDTH)
 		{
-			if (p.x != player->pos.x && p.y != player->pos.y &&
+			if (!(p.x == player->pos.x && p.y == player->pos.y) &&
 				test(player, map[p.y][p.x]))
 			{
 				if (!(ps = realloc(ps, (pcount + 1) * sizeof(t_lp))))
@@ -139,7 +139,7 @@ void	iabombard(t_context *context)
 	}
 	else
 	{
-		size_t	eclosecount = pcount_d(enemy, ecount, 5);
+		size_t	eclosecount = pcount_d(enemy, ecount, 10);
 		size_t	aclosecount = pcount_d(ally, acount, 5);
 
 		if (ecount && aclosecount > eclosecount)
