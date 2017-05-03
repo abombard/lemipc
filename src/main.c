@@ -127,7 +127,8 @@ void	loop(t_context *context)
 	while (!die)
 	{
 		sem_wait(context->sem_id);
-		if (last_team_standing(context->map, &winner))
+		if (context->shm->state != GAMESTATE_INIT &&
+			last_team_standing(context->map, &winner))
 			die = 1;
 		if (context->shm->state == GAMESTATE_OVER ||
 			isdead(&context->player, context->map))
@@ -135,7 +136,8 @@ void	loop(t_context *context)
 		else if (context->shm->state == GAMESTATE_ON)
 			ia(context);
 		sem_post(context->sem_id);
-		usleep(200000);
+		sleep(5);
+		//usleep(200000);
 	}
 }
 
@@ -198,5 +200,6 @@ int		main(int argc, char **argv)
 		sem_post(context.sem_id);
 	}
 	end(&context);
+	fprintf(stderr, "%s died\n", argv[1]);
 	return (0);
 }
