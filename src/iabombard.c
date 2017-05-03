@@ -157,8 +157,8 @@ void	iabombard(t_context *context)
 
 		if (ecount && aclosecount > eclosecount)
 		{
-			target.x = enemy[0].x + rand() % 3 - 1;
-			target.y = enemy[0].y + rand() % 3 - 1;
+			target.x = enemy[0].x;
+			target.y = enemy[0].y;
 		}
 		else if (acount)
 		{
