@@ -99,13 +99,21 @@ void	moveto(char **map, t_player *player, t_pos *target)
 			x1 -= 1;
 		else if (x2 > x1 && isempty(map[y1][x1 + 1]))
 			x1 += 1;
+		else if (y2 < y1 && isempty(map[y1 - 1][x1]))
+			y1 -= 1;
+		else if (y2 > y1 && isempty(map[y1 + 1][x1]))
+			y1 += 1;
 	}
-	else
+	else if (abs((int)x2 - (int)x1) < abs((int)y2 - (int)y1))
 	{
 		if (y2 < y1 && isempty(map[y1 - 1][x1]))
 			y1 -= 1;
 		else if (y2 > y1 && isempty(map[y1 + 1][x1]))
 			y1 += 1;
+		else if (x2 < x1 && isempty(map[y1][x1 - 1]))
+			x1 -= 1;
+		else if (x2 > x1 && isempty(map[y1][x1 + 1]))
+			x1 += 1;
 	}
 	if (x1 == player->pos.x && y1 == player->pos.y)
 		random_move(player, map, &x1, &x2);
@@ -132,10 +140,15 @@ void	iabombard(t_context *context)
 	t_pos	target;
 
 	size = mq_timedreceive(context->player.mq, msg, sizeof(msg), &prio, &timeout);
-	if (size > 0 )
+	if (size > 0)
 	{
 		msg[size] = '\0';
 		size = sscanf(msg, "%u %u", &target.x, &target.y);
+	}
+	else if (ecount == 1)
+	{
+		target.x = enemy[0].x;
+		target.y = enemy[0].y;
 	}
 	else
 	{
@@ -144,18 +157,20 @@ void	iabombard(t_context *context)
 
 		if (ecount && aclosecount > eclosecount)
 		{
-			target.x = enemy[0].x;
-			target.y = enemy[0].y;
+			target.x = enemy[0].x + rand() % 3 - 1;
+			target.y = enemy[0].y + rand() % 3 - 1;
 		}
 		else if (acount)
 		{
-			target.x = ally[0].x;
-			target.y = ally[0].y;
+			target.x = ally[0].x + rand() % 3 - 1;
+			target.y = ally[0].y + rand() % 3 - 1;
 
 			size = snprintf(msg, sizeof(msg), "%u %u", context->player.pos.x, context->player.pos.y);
 			timeout.tv_sec = 1;
 			timeout.tv_nsec = 0;
 			mq_timedsend(context->player.mq, msg, (unsigned long)size, prio, &timeout);
+			if (acount > 2)
+				mq_timedsend(context->player.mq, msg, (unsigned long)size, prio, &timeout);
 		}
 		else if (ecount)
 		{
