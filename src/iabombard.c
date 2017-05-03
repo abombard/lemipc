@@ -121,7 +121,7 @@ void	random_move(t_player *player, char **map, unsigned int *x1, unsigned int *y
 	*y1 = player->pos.y;
 }
 
-void	movefront(char **map, t_player *player, t_pos *target)
+void	moveto(char **map, t_player *player, t_pos *target)
 {
 	unsigned int	x1;
 	unsigned int	y1;
@@ -174,22 +174,46 @@ void	ia(t_context *context)
 	ally = find_all(context->map, &context->player, &isally, &acount);
 	enemy = find_all(context->map, &context->player, &isenemy, &ecount);
 
+	t_pos	target;
+
 	size = mq_timedreceive(context->player.mq, msg, sizeof(msg), &prio, &timeout);
-	if (size != -1)
+	if (size > 0 )
 	{
 		msg[size] = '\0';
-		t_pos	target;
 		size = sscanf(msg, "%u %u", &target.x, &target.y);
-		movefront(context->map, &context->player, &target);
+	}
+	else
+	{
+		size_t	eclosecount = pcount_d(enemy, ecount, 5);
+		size_t	aclosecount = pcount_d(ally, acount, 5);
+
+		if (ecount && aclosecount > eclosecount)
+		{
+			target.x = enemy[0].x;
+			target.y = enemy[0].y;
+		}
+		else if (acount)
+		{
+			target.x = ally[0].x;
+			target.y = ally[0].y;
+
+			size = snprintf(msg, sizeof(msg), "%u %u", context->player.pos.x, context->player.pos.y);
+			timeout.tv_sec = 1;
+			timeout.tv_nsec = 0;
+			mq_timedsend(context->player.mq, msg, (unsigned long)size, prio, &timeout);
+		}
+		else if (ecount)
+		{
+			target.x = context->player.pos.x + (context->player.pos.x - enemy[0].x) % 1;
+			target.y = context->player.pos.y + (context->player.pos.y - enemy[0].y) % 1;
+		}
+		else
+		{
+			fprintf(stderr, "Game Over ?\n");
+		}
 	}
 
-	if (ecount)
-	{
-		size = snprintf(msg, sizeof(msg), "%u %u", enemy[0].x, enemy[0].y);
-		timeout.tv_sec = 1;
-		timeout.tv_nsec = 0;
-		mq_timedsend(context->player.mq, msg, (unsigned long)size, prio, &timeout);
-	}
+	moveto(context->map, &context->player, &target);
 
 	/*
 	printf("---------------------------------------------------\n");
@@ -198,7 +222,6 @@ void	ia(t_context *context)
 	printf("pcount_d ally 5 %lu\n", pcount_d(ally, acount, 5));
 	printf("pcount_d enemy 5 %lu\n", pcount_d(enemy, ecount, 5));
 	printf("---------------------------------------------------\n");
-	*/
 
 	printf("-------------------------------------\n");
 	unsigned int	i;
@@ -211,6 +234,7 @@ void	ia(t_context *context)
 	{
 		fprintf(stderr, "Enemy %u: %u %u d:%u team:%c\n", i, enemy[i].x, enemy[i].y, enemy[i].d, enemy[i].team);
 	}
+	*/
 
 	free(ally);
 	free(enemy);
