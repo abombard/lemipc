@@ -50,7 +50,7 @@ clean:
 	@rm -rf $(BUILD_DIR)
 
 fclean:clean
-	@rm -f $(NAME)
+	@rm -f lemipc_iabombard lemipc_iaduban
 	@make $@ -C $(DIR_LIBFT)
 	@make $@ -C $(DIR_LIST)
 
