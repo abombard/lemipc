@@ -1,20 +1,5 @@
 #include "lemipc.h"
 
-static int		isempty(char c)
-{
-	return (c == MAP_EMPTYCASE);
-}
-
-static int		isally(t_player *player, char c)
-{
-	return (c == player->id);
-}
-
-static int		isenemy(t_player *player, char c)
-{
-	return (!isempty(c) && !isally(player, c));
-}
-
 typedef struct	s_lp
 {
 	unsigned int	x;
@@ -91,36 +76,6 @@ size_t	pcount_d(t_lp *ps, size_t pcount, size_t d)
 	return (count);
 }
 
-static int		isoutofrange(unsigned int x, unsigned int y)
-{
-	return (x >= MAP_WIDTH || y >= MAP_HEIGHT);
-}
-
-void	random_move(t_player *player, char **map, unsigned int *x1, unsigned int *y1)
-{
-	int				timeout;
-	unsigned int	x;
-	unsigned int	y;
-
-	timeout = 10;
-	while (timeout)
-	{
-		x = player->pos.x;
-		y = player->pos.y;
-		x += rand() % 3 - 1;
-		y += x == player->pos.x ? rand() % 3 - 1 : 0;
-		if (!isoutofrange(x, y) && isempty(map[y][x]))
-		{
-			*x1 = x;
-			*y1 = y;
-			return ;
-		}
-		timeout -= 1;
-	}
-	*x1 = player->pos.x;
-	*y1 = player->pos.y;
-}
-
 void	moveto(char **map, t_player *player, t_pos *target)
 {
 	unsigned int	x1;
@@ -159,7 +114,7 @@ void	moveto(char **map, t_player *player, t_pos *target)
 	player->pos.y = y1;
 }
 
-void	ia(t_context *context)
+void	iabombard(t_context *context)
 {
 	t_lp	*ally;
 	size_t	acount;

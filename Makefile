@@ -1,6 +1,6 @@
 CC=clang
 FLAGS42=-Wall -Wextra -Werror -Wconversion
-FLAGS=$(FLAGS42)
+FLAGS=
 
 NAME=lemipc
 
@@ -20,11 +20,13 @@ SRC=\
 	sem.c		\
 	mq.c		\
 	player.c	\
+	utils.c		\
 	iabombard.c	\
+	iaduban.c	\
 
 OBJ=$(addprefix $(BUILD_DIR)/,$(SRC:.c=.o))
 
-all:$(BUILD_DIR) $(NAME)
+all:$(BUILD_DIR) iaduban iabombard
 
 $(BUILD_DIR):
 	@mkdir -p $@
@@ -36,8 +38,12 @@ $(LIBS_BIN):
 	@make -C $(DIR_LIBFT)
 	@make -C $(DIR_LIST)
 
-$(NAME):$(LIBS_BIN) $(OBJ)
-	@$(CC) $(FLAGS) $(OBJ) $(LIBS) -o $@
+iaduban:$(LIBS_BIN) $(OBJ)
+	@$(CC) $(FLAGS) $(OBJ) $(LIBS) -o $@ -DADUBAN
+	@echo "$@ was created"
+
+iabombard:$(LIBS_BIN) $(OBJ)
+	@$(CC) $(FLAGS) $(OBJ) $(LIBS) -o $@ -DABOMBARD
 	@echo "$@ was created"
 
 clean:
