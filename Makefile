@@ -26,7 +26,7 @@ SRC=\
 
 OBJ=$(addprefix $(BUILD_DIR)/,$(SRC:.c=.o))
 
-all:$(BUILD_DIR) iaduban iabombard
+all:$(BUILD_DIR) lemipc_iaduban lemipc_iabombard
 
 $(BUILD_DIR):
 	@mkdir -p $@
@@ -38,12 +38,12 @@ $(LIBS_BIN):
 	@make -C $(DIR_LIBFT)
 	@make -C $(DIR_LIST)
 
-iaduban:$(LIBS_BIN) $(OBJ)
-	@$(CC) $(FLAGS) $(OBJ) $(LIBS) -o $@ -DADUBAN
+lemipc_iaduban:$(LIBS_BIN) $(OBJ)
+	@$(CC) $(FLAGS) $(addprefix $(SRC_DIR)/,$(SRC)) $(LIBS) $(INCLUDES) -o $@ -D IADUBAN
 	@echo "$@ was created"
 
-iabombard:$(LIBS_BIN) $(OBJ)
-	@$(CC) $(FLAGS) $(OBJ) $(LIBS) -o $@ -DABOMBARD
+lemipc_iabombard:$(LIBS_BIN) $(OBJ)
+	@$(CC) $(FLAGS) $(addprefix $(SRC_DIR)/,$(SRC)) $(LIBS) $(INCLUDES) -o $@ -D IABOMBARD
 	@echo "$@ was created"
 
 clean:

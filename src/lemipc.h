@@ -122,7 +122,8 @@ void	iabombard(t_context *context);
 
 # ifdef IADUBAN
 #  define ia iaduban
-# else
+# endif
+# ifdef IABOMBARD
 #  define ia iabombard
 # endif
 
