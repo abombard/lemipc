@@ -117,6 +117,19 @@ typedef struct	s_context
 	t_player	player;
 }				t_context;
 
-void	ia(t_context *context);
+void	iaduban(t_context *context);
+void	iabombard(t_context *context);
+
+# ifdef IADUBAN
+#  define ia iaduban
+# else
+#  define ia iabombard
+# endif
+
+int		isempty(char c);
+int		isally(t_player *player, char c);
+int		isenemy(t_player *player, char c);
+int		isoutofrange(unsigned int x, unsigned int y);
+void	random_move(t_player *player, char **map, unsigned int *x1, unsigned int *y1);
 
 #endif
