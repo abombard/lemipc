@@ -19,6 +19,14 @@ int		lpcmp(void const *a, void const *b)
 }
 
 #include <math.h>
+unsigned int	distance(t_pos *p1, t_pos *p2)
+{
+	int	x = (int)p1->x - (int)p2->x;
+	int	y = (int)p1->y - (int)p2->y;
+	return ((unsigned int)sqrt(x * x + y * y));
+
+}
+
 t_lp	*find_all(char **map, t_player *player, int (*test)(t_player *, char), size_t *count)
 {
 	t_lp			*ps;
@@ -42,10 +50,8 @@ t_lp	*find_all(char **map, t_player *player, int (*test)(t_player *, char), size
 					exit(EXIT_FAILURE);
 				}
 				p.team = map[p.y][p.x];
-
-				int	x = (int)p.x - (int)player->pos.x;
-				int	y = (int)p.y - (int)player->pos.y;
-				p.d = (unsigned int)sqrt(x * x + y * y);
+				t_pos	tmp = { p.x, p.y };
+				p.d = distance(&player->pos, &tmp);
 				ps[pcount] = p;
 				pcount += 1;
 			}
@@ -122,6 +128,42 @@ void	moveto(char **map, t_player *player, t_pos *target)
 	player->pos.y = y1;
 }
 
+void	send_target(mqd_t mq, char *action, t_pos *target, int count)
+{
+	char			msg[1024];
+	ssize_t			size;
+	unsigned int	prio = 1;
+	struct timespec	timeout;
+	int				i;
+
+	size = snprintf(msg, sizeof(msg), "%s %u %u", action, target->x, target->y);
+	timeout.tv_sec = 1;
+	timeout.tv_nsec = 0;
+	i = 0;
+	while (i < count)
+	{
+		mq_timedsend(mq, msg, (unsigned long)size, prio, &timeout);
+		i += 1;
+	}
+}
+
+int		recv_target(mqd_t mq, t_pos *target, char *action)
+{
+	char			msg[1024];
+	ssize_t			size;
+	unsigned int	prio = 1;
+	struct timespec	timeout;
+
+	timeout.tv_sec = 1;
+	timeout.tv_nsec = 0;
+	size = mq_timedreceive(mq, msg, sizeof(msg), &prio, &timeout);
+	if (size <= 0)
+		return (0);
+	msg[size] = '\0';
+	size = sscanf(msg, "%s %u %u", action, &target->x, &target->y);
+	return (1);
+}
+
 void	iabombard(t_context *context)
 {
 	t_lp	*ally;
@@ -129,21 +171,30 @@ void	iabombard(t_context *context)
 	t_lp	*enemy;
 	size_t	ecount;
 
-	char			msg[1024];
-	ssize_t			size;
-	unsigned int	prio = 1;
-	struct timespec	timeout;
-
 	ally = find_all(context->map, &context->player, &isally, &acount);
 	enemy = find_all(context->map, &context->player, &isenemy, &ecount);
 
 	t_pos	target;
+	char	action[1024];
+	int		done = 0;
 
-	size = mq_timedreceive(context->player.mq, msg, sizeof(msg), &prio, &timeout);
-	if (size > 0)
+	if (recv_target(context->player.mq, &target, action))
 	{
-		msg[size] = '\0';
-		size = sscanf(msg, "%u %u", &target.x, &target.y);
+		if (!ft_strcmp(action, "help"))
+		{
+			done = 1;
+		}
+		else if (!ft_strcmp(action, "attack"))
+		{
+			if (distance(&context->player.pos, &target) < 5)
+				done = 1;
+			else
+				send_target(context->player.mq, "attack", &target, 1);
+		}
+	}
+	if (done)
+	{
+
 	}
 	else if (ecount == 1)
 	{
@@ -159,18 +210,15 @@ void	iabombard(t_context *context)
 		{
 			target.x = enemy[0].x;
 			target.y = enemy[0].y;
+
+			send_target(context->player.mq, "attack", &context->player.pos, 1);
 		}
 		else if (acount)
 		{
 			target.x = ally[0].x + rand() % 3 - 1;
 			target.y = ally[0].y + rand() % 3 - 1;
 
-			size = snprintf(msg, sizeof(msg), "%u %u", context->player.pos.x, context->player.pos.y);
-			timeout.tv_sec = 1;
-			timeout.tv_nsec = 0;
-			mq_timedsend(context->player.mq, msg, (unsigned long)size, prio, &timeout);
-			if (acount > 2)
-				mq_timedsend(context->player.mq, msg, (unsigned long)size, prio, &timeout);
+			send_target(context->player.mq, "help", &context->player.pos, acount > 2 ? 2 : 1);
 		}
 		else if (ecount)
 		{
