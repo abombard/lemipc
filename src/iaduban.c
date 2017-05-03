@@ -5,58 +5,58 @@
 
 typedef struct	s_lp
 {
-	int	x;
-	int	y;
-	unsigned int	d;
-	char			team;
+  int	x;
+  int	y;
+  unsigned int	d;
+  char			team;
 }				t_lp;
 static int		lpcmp(void const *a, void const *b)
 {
-	t_lp	*p1;
-	t_lp	*p2;
+  t_lp	*p1;
+  t_lp	*p2;
 
-	p1 = (t_lp *)a;
-	p2 = (t_lp *)b;
-	return ((int)p1->d - (int)p2->d);
+  p1 = (t_lp *)a;
+  p2 = (t_lp *)b;
+  return ((int)p1->d - (int)p2->d);
 }
 #include <math.h>
 static t_lp	*find_all(char **map, t_player *player, int (*test)(t_player *, char), size_t *count)
 {
-	t_lp			*ps;
-	size_t			pcount;
-	t_lp			p;
+  t_lp			*ps;
+  size_t			pcount;
+  t_lp			p;
 
-	ps = NULL;
-	pcount = 0;
-	p.y = 0;
-	while (p.y < MAP_HEIGHT)
-	{
-		p.x = 0;
-		while (p.x < MAP_WIDTH)
-		{
-			if (!(p.x == player->pos.x && p.y == player->pos.y) &&
-				test(player, map[p.y][p.x]))
-			{
-				if (!(ps = realloc(ps, (pcount + 1) * sizeof(t_lp))))
-				{
-					perror("realloc");
-					exit(EXIT_FAILURE);
-				}
-				p.team = map[p.y][p.x];
+  ps = NULL;
+  pcount = 0;
+  p.y = 0;
+  while (p.y < MAP_HEIGHT)
+  {
+    p.x = 0;
+    while (p.x < MAP_WIDTH)
+    {
+      if (!(p.x == player->pos.x && p.y == player->pos.y) &&
+          test(player, map[p.y][p.x]))
+      {
+        if (!(ps = realloc(ps, (pcount + 1) * sizeof(t_lp))))
+        {
+          perror("realloc");
+          exit(EXIT_FAILURE);
+        }
+        p.team = map[p.y][p.x];
 
-				int	x = (int)p.x - (int)player->pos.x;
-				int	y = (int)p.y - (int)player->pos.y;
-				p.d = (unsigned int)sqrt(x * x + y * y);
-				ps[pcount] = p;
-				pcount += 1;
-			}
-			p.x += 1;
-		}
-		p.y += 1;
-	}
-	qsort(ps, pcount, sizeof(t_lp), &lpcmp);
-	*count = pcount;
-	return (ps);
+        int	x = (int)p.x - (int)player->pos.x;
+        int	y = (int)p.y - (int)player->pos.y;
+        p.d = (unsigned int)sqrt(x * x + y * y);
+        ps[pcount] = p;
+        pcount += 1;
+      }
+      p.x += 1;
+    }
+    p.y += 1;
+  }
+  qsort(ps, pcount, sizeof(t_lp), &lpcmp);
+  *count = pcount;
+  return (ps);
 }
 
 bool    get_target_coord(t_context *context, int *targetx, int *targety)
@@ -72,14 +72,14 @@ bool    get_target_coord(t_context *context, int *targetx, int *targety)
   enemy = find_all(context->map, &context->player, &isenemy, &ecount);
   int g = 0;
   int w = 0;
- int  nbally = 0;
- int tmpnbally = 0;
- t_lp final;
- if (ecount == 0)
-   return false;
- final.x = enemy[0].x;
- final.y = enemy[0].y;
- 
+  int  nbally = -100;
+  int tmpnbally = 0;
+  t_lp final;
+  if (ecount == 0)
+    return false;
+  final.x = enemy[0].x;
+  final.y = enemy[0].y;
+
   while (g < ecount)
   {
     w = 0;
@@ -95,20 +95,22 @@ bool    get_target_coord(t_context *context, int *targetx, int *targety)
     w = 0;
     while (w < ecount)
     {
-      if ((enemy[g].x - 15) < enemy[w].x && (enemy[g].x + 15) > enemy[w].x && (enemy[g].y - 15) < enemy[w].y && (enemy[g].y + 15) > enemy[w].y )
+      if ((enemy[g].x - 2) < enemy[w].x && (enemy[g].x + 2) > enemy[w].x && (enemy[g].y - 2) < enemy[w].y && (enemy[g].y + 2) > enemy[w].y )
       {
-        tmpnbally--;
+        tmpnbally -= 5;
       }
       w++;
     }
     if (tmpnbally > nbally)
     {
+      fprintf(stderr, "FOUND\n");
       nbally = tmpnbally;
       final.x = enemy[g].x;
       final.y = enemy[g].y;
     }
     g++;
   }
+  fprintf(stderr, "NB ALLY %d\n", nbally);
   *targetx = (int)final.x;
   *targety = (int)final.y;
   return true;
@@ -216,24 +218,34 @@ void	iaduban(t_context *context)
   x_target = ft_atoi(tab[0]);
   y_target = ft_atoi(tab[1]);
   takeoff_player(context);
-   if (y_target > context->player.pos.y && context->map[context->player.pos.y + 1][context->player.pos.x] == MAP_EMPTYCASE)
+  int diffy = abs(y_target - (int)context->player.pos.y);
+  int diffx = abs(x_target - (int)context->player.pos.x);
+  if (diffy > diffx)
   {
-    context->player.pos.y += 1;
-  }
-   else if (x_target > context->player.pos.x && context->map[context->player.pos.y][context->player.pos.x + 1] == MAP_EMPTYCASE)
-  {
-    context->player.pos.x += 1;
-  }
-  else if (y_target < context->player.pos.y && context->map[context->player.pos.y - 1][context->player.pos.x] == MAP_EMPTYCASE)
-  {
-    context->player.pos.y -= 1;
-  }
-  else if (x_target < context->player.pos.x && context->map[context->player.pos.y][context->player.pos.x - 1] == MAP_EMPTYCASE)
-  {
-    context->player.pos.x -= 1;
+    if (y_target > context->player.pos.y && context->map[context->player.pos.y + 1][context->player.pos.x] == MAP_EMPTYCASE)
+    {
+      context->player.pos.y += 1;
+    }
+    else if (y_target < context->player.pos.y && context->map[context->player.pos.y - 1][context->player.pos.x] == MAP_EMPTYCASE)
+    {
+      context->player.pos.y -= 1;
+    }
+    else
+      random_move(&context->player, context->map, &context->player.pos.x, &context->player.pos.y);
   }
   else
-    random_move(&context->player, context->map, &context->player.pos.x, &context->player.pos.y);
+  {
+    if (x_target > context->player.pos.x && context->map[context->player.pos.y][context->player.pos.x + 1] == MAP_EMPTYCASE)
+    {
+      context->player.pos.x += 1;
+    }
+    else if (x_target < context->player.pos.x && context->map[context->player.pos.y][context->player.pos.x - 1] == MAP_EMPTYCASE)
+    {
+      context->player.pos.x -= 1;
+    }
+    else
+      random_move(&context->player, context->map, &context->player.pos.x, &context->player.pos.y);
+  }
 
 
   place_player(context);
