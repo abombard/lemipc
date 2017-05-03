@@ -72,7 +72,7 @@ bool    get_target_coord(t_context *context, int *targetx, int *targety)
   enemy = find_all(context->map, &context->player, &isenemy, &ecount);
   int g = 0;
   int w = 0;
- int  nbally = 0;
+ int  nbally = -100;
  int tmpnbally = 0;
  t_lp final;
  if (ecount == 0)
@@ -95,20 +95,22 @@ bool    get_target_coord(t_context *context, int *targetx, int *targety)
     w = 0;
     while (w < ecount)
     {
-      if ((enemy[g].x - 15) < enemy[w].x && (enemy[g].x + 15) > enemy[w].x && (enemy[g].y - 15) < enemy[w].y && (enemy[g].y + 15) > enemy[w].y )
+      if ((enemy[g].x - 2) < enemy[w].x && (enemy[g].x + 2) > enemy[w].x && (enemy[g].y - 2) < enemy[w].y && (enemy[g].y + 2) > enemy[w].y )
       {
-        tmpnbally--;
+        tmpnbally -= 5;
       }
       w++;
     }
     if (tmpnbally > nbally)
     {
+      fprintf(stderr, "FOUND\n");
       nbally = tmpnbally;
       final.x = enemy[g].x;
       final.y = enemy[g].y;
     }
     g++;
   }
+  fprintf(stderr, "NB ALLY %d\n", nbally);
   *targetx = (int)final.x;
   *targety = (int)final.y;
   return true;
