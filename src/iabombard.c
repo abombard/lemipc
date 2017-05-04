@@ -93,9 +93,9 @@ void	moveto(char **map, t_player *player, t_pos *target)
 	y1 = player->pos.y;
 	x2 = target->x;
 	y2 = target->y;
+	map[y1][x1] = MAP_EMPTYCASE;
 	if (!isoutofrange(x2, y2))
 	{
-		map[y1][x1] = MAP_EMPTYCASE;
 		if (abs((int)x2 - (int)x1) > abs((int)y2 - (int)y1))
 		{
 			if (x2 < x1 && isempty(map[y1][x1 - 1]))
@@ -118,10 +118,8 @@ void	moveto(char **map, t_player *player, t_pos *target)
 			else if (x2 > x1 && isempty(map[y1][x1 + 1]))
 				x1 += 1;
 		}
-		if (x1 == player->pos.x && y1 == player->pos.y)
-			random_move(player, map, &x1, &y1);
 	}
-	else
+	if (x1 == player->pos.x && y1 == player->pos.y)
 		random_move(player, map, &x1, &y1);
 	map[y1][x1] = player->id;
 	player->pos.x = x1;
@@ -209,22 +207,28 @@ void	iabombard(t_context *context)
 	{
 		fprintf(stderr, "recv target ! %s %u %u\n", action, target.x, target.y);
 	}
-	else if (ecount == 1)
-	{
-		target.x = enemy[0].x;
-		target.y = enemy[0].y;
-	}
 	else
 	{
-		size_t	eclosecount = pcount_d(enemy, ecount, 10);
-		size_t	aclosecount = pcount_d(ally, acount, 6);
+		size_t	eclosecount = pcount_d(enemy, ecount, 5);
+		size_t	aclosecount = pcount_d(ally, acount, 10);
 
 		target = easytarget(&context->player, ally, aclosecount, enemy, eclosecount);
+
+		eclosecount = pcount_d(enemy, ecount, 10);
+		aclosecount = pcount_d(ally, acount, 8);
+
 		if (target.x != 0 && target.y != 0)
 		{
 			//printf("He's between!\n");
 		}
-		else if (ecount && (aclosecount > eclosecount || acount == aclosecount))
+		else if (ecount && aclosecount == acount)
+		{
+			target.x = enemy[0].x;
+			target.y = enemy[0].y;
+
+			send_target(&context->player, "attack", &target, 1);
+		}
+		else if (ecount && aclosecount > eclosecount)
 		{
 			target.x = enemy[0].x;
 			target.y = enemy[0].y;
@@ -233,8 +237,6 @@ void	iabombard(t_context *context)
 		{
 			target.x = ally[aclosecount].x + rand() % 3 - 1;
 			target.y = ally[aclosecount].y + rand() % 3 - 1;
-
-			send_target(&context->player, "attack", &target, 1);
 		}
 		else if (ecount)
 		{
