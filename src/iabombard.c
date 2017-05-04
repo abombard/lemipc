@@ -93,36 +93,36 @@ void	moveto(char **map, t_player *player, t_pos *target)
 	y1 = player->pos.y;
 	x2 = target->x;
 	y2 = target->y;
-	if (isoutofrange(x2, y2))
+	if (!isoutofrange(x2, y2))
 	{
-		fprintf(stderr, "Out of range ! %u %u\n", x2, y2);
-		return ;
+		map[y1][x1] = MAP_EMPTYCASE;
+		if (abs((int)x2 - (int)x1) > abs((int)y2 - (int)y1))
+		{
+			if (x2 < x1 && isempty(map[y1][x1 - 1]))
+				x1 -= 1;
+			else if (x2 > x1 && isempty(map[y1][x1 + 1]))
+				x1 += 1;
+			else if (y2 < y1 && isempty(map[y1 - 1][x1]))
+				y1 -= 1;
+			else if (y2 > y1 && isempty(map[y1 + 1][x1]))
+				y1 += 1;
+		}
+		else if (abs((int)x2 - (int)x1) < abs((int)y2 - (int)y1))
+		{
+			if (y2 < y1 && isempty(map[y1 - 1][x1]))
+				y1 -= 1;
+			else if (y2 > y1 && isempty(map[y1 + 1][x1]))
+				y1 += 1;
+			else if (x2 < x1 && isempty(map[y1][x1 - 1]))
+				x1 -= 1;
+			else if (x2 > x1 && isempty(map[y1][x1 + 1]))
+				x1 += 1;
+		}
+		if (x1 == player->pos.x && y1 == player->pos.y)
+			random_move(player, map, &x1, &y1);
 	}
-	map[y1][x1] = MAP_EMPTYCASE;
-	if (abs((int)x2 - (int)x1) > abs((int)y2 - (int)y1))
-	{
-		if (x2 < x1 && isempty(map[y1][x1 - 1]))
-			x1 -= 1;
-		else if (x2 > x1 && isempty(map[y1][x1 + 1]))
-			x1 += 1;
-		else if (y2 < y1 && isempty(map[y1 - 1][x1]))
-			y1 -= 1;
-		else if (y2 > y1 && isempty(map[y1 + 1][x1]))
-			y1 += 1;
-	}
-	else if (abs((int)x2 - (int)x1) < abs((int)y2 - (int)y1))
-	{
-		if (y2 < y1 && isempty(map[y1 - 1][x1]))
-			y1 -= 1;
-		else if (y2 > y1 && isempty(map[y1 + 1][x1]))
-			y1 += 1;
-		else if (x2 < x1 && isempty(map[y1][x1 - 1]))
-			x1 -= 1;
-		else if (x2 > x1 && isempty(map[y1][x1 + 1]))
-			x1 += 1;
-	}
-	if (x1 == player->pos.x && y1 == player->pos.y)
-		random_move(player, map, &x1, &x2);
+	else
+		random_move(player, map, &x1, &y1);
 	map[y1][x1] = player->id;
 	player->pos.x = x1;
 	player->pos.y = y1;
@@ -151,6 +151,7 @@ int		recv_target(t_player *player, t_pos *target, char *action)
 	size = mq_recv(player->mq, player->id, msg, sizeof(msg));
 	if (size <= 0)
 		return (0);
+	fprintf(stderr, "recv msg %s\n", msg);
 	size = sscanf(msg, "%s %u %u", action, &target->x, &target->y);
 	return (1);
 }
@@ -161,6 +162,34 @@ int		isbetween(t_pos *p1, t_pos *p2, t_pos *target)
 			p1->y <= target->y && target->y <= p2->y) ||
 			(p1->x >= target->x && target->x >= p2->x &&
 			 p1->y >= target->y && target->y >= p2->y));
+}
+
+t_pos	easytarget(t_player *player, t_lp *ally, size_t acount, t_lp *enemy, size_t ecount)
+{
+	t_pos	a;
+	t_pos	e;
+	int		i;
+	int		j;
+
+	i = 0;
+	while (i < ecount)
+	{
+		e.x = enemy[i].x;
+		e.y = enemy[i].y;
+		j = 0;
+		while (j < acount)
+		{
+			a.x = ally[j].x;
+			a.y = ally[j].y;
+			if (isbetween(&player->pos, &a, &e))
+				return (e);
+			j += 1;
+		}
+		i += 1;
+	}
+	e.x = 0;
+	e.y = 0;
+	return (e);
 }
 
 void	iabombard(t_context *context)
@@ -178,6 +207,7 @@ void	iabombard(t_context *context)
 
 	if (recv_target(&context->player, &target, action))
 	{
+		fprintf(stderr, "recv target ! %s %u %u\n", action, target.x, target.y);
 	}
 	else if (ecount == 1)
 	{
@@ -189,36 +219,10 @@ void	iabombard(t_context *context)
 		size_t	eclosecount = pcount_d(enemy, ecount, 10);
 		size_t	aclosecount = pcount_d(ally, acount, 6);
 
-		int		done = 0;
-		if (eclosecount && aclosecount)
+		target = easytarget(&context->player, ally, aclosecount, enemy, eclosecount);
+		if (target.x != 0 && target.y != 0)
 		{
-			int		i = 0;
-			while (i < eclosecount)
-			{
-				t_pos	a, e;
-
-				e.x = enemy[i].x;
-				e.y = enemy[i].y;
-
-				int j = 0;
-				while (j < aclosecount)
-				{
-					a.x = ally[j].x;
-					a.y = ally[j].y;
-					if (isbetween(&context->player.pos, &a, &e))
-					{
-						target = e;
-						done = 1;
-						break ;
-					}
-					j += 1;
-				}
-				i += 1;
-			}
-		}
-		if (done)
-		{
-			printf("He's between!\n");
+			//printf("He's between!\n");
 		}
 		else if (ecount && (aclosecount > eclosecount || acount == aclosecount))
 		{
@@ -229,6 +233,8 @@ void	iabombard(t_context *context)
 		{
 			target.x = ally[aclosecount].x + rand() % 3 - 1;
 			target.y = ally[aclosecount].y + rand() % 3 - 1;
+
+			send_target(&context->player, "attack", &target, 1);
 		}
 		else if (ecount)
 		{

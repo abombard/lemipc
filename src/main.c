@@ -34,8 +34,9 @@ void	shm_link(char **map, t_shm *shm)
 	}
 }
 
-void	init(t_context *context)
+void	init(t_context *context, char *algo)
 {
+	context->algo = algo ? ft_atoi(algo) : 1;
 	shm_get(&context->shmid, &context->creator);
 	shm_attach(&context->shm, context->shmid);
 	sem_get(&context->semid, context->creator);
@@ -187,7 +188,7 @@ void	loop(t_context *context)
 			isdead(&context->player, context->map))
 			die = 1;
 		else if (context->shm->state == GAMESTATE_ON)
-			ia(context);
+			context->algo == 1 ? iabombard(context) : iaduban(context);
 		sem_post(context->semid);
 		//sleep(5);
 		usleep(200000);
@@ -221,13 +222,13 @@ int		main(int argc, char **argv)
 	int			last_process;
 
 	last_process = 0;
-	if (argc != 2)
+	if (argc != 2 && argc != 3)
 	{
-		printf("Usage: %s <Team Id>\n", argv[0]);
+		printf("Usage: %s <Team Id> [algo:0|1|2]\n", argv[0]);
 		return (2);
 	}
 	srand((unsigned int)time(NULL));
-	init(&context);
+	init(&context, argv[2]);
 	if (!ft_strcmp(argv[1], "start"))
 	{
 		sem_wait(context.semid);

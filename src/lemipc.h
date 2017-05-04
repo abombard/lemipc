@@ -105,6 +105,8 @@ void	player_erase(t_player *player, char **map, int *last_player);
 */
 typedef struct	s_context
 {
+	int			algo;
+
 	int			creator;
 	int			shmid;
 	t_shm		*shm;
@@ -118,13 +120,6 @@ typedef struct	s_context
 
 void	iaduban(t_context *context);
 void	iabombard(t_context *context);
-
-# ifdef IADUBAN
-#  define ia iaduban
-# endif
-# ifdef IABOMBARD
-#  define ia iabombard
-# endif
 
 int		isempty(char c);
 int		isally(t_player *player, char c);
