@@ -1,16 +1,6 @@
-#define GNU_SOURCE
 #include "lemipc.h"
 
-#include <stdbool.h>
-
-typedef struct	s_lp
-{
-  int	x;
-  int	y;
-  unsigned int	d;
-  char			team;
-}				t_lp;
-static int		lpcmp(void const *a, void const *b)
+int		lpcmp(void const *a, void const *b)
 {
   t_lp	*p1;
   t_lp	*p2;
@@ -19,7 +9,22 @@ static int		lpcmp(void const *a, void const *b)
   p2 = (t_lp *)b;
   return ((int)p1->d - (int)p2->d);
 }
-#include <math.h>
+
+void    err_and_exit(char *msg)
+{
+  perror(msg);
+  exit(EXIT_FAILURE);
+}
+
+void get_distance(t_lp *p, char **map, t_player *player)
+{
+  p->team = map[p->y][p->x];
+  int	x = (int)p->x - (int)player->pos.x;
+  int	y = (int)p->y - (int)player->pos.y;
+  p->d = (unsigned int)sqrt(x * x + y * y);
+
+}
+
 static t_lp	*find_all(char **map, t_player *player, int (*test)(t_player *, char), size_t *count)
 {
   t_lp			*ps;
@@ -28,91 +33,75 @@ static t_lp	*find_all(char **map, t_player *player, int (*test)(t_player *, char
 
   ps = NULL;
   pcount = 0;
-  p.y = 0;
-  while (p.y < MAP_HEIGHT)
+  p.y = -1;
+  while (++p.y < MAP_HEIGHT)
   {
-    p.x = 0;
-    while (p.x < MAP_WIDTH)
-    {
+    p.x = -1;
+    while (++p.x < MAP_WIDTH)
       if (!(p.x == player->pos.x && p.y == player->pos.y) &&
           test(player, map[p.y][p.x]))
       {
         if (!(ps = realloc(ps, (pcount + 1) * sizeof(t_lp))))
-        {
-          perror("realloc");
-          exit(EXIT_FAILURE);
-        }
-        p.team = map[p.y][p.x];
-
-        int	x = (int)p.x - (int)player->pos.x;
-        int	y = (int)p.y - (int)player->pos.y;
-        p.d = (unsigned int)sqrt(x * x + y * y);
+          err_and_exit("realloc");
+        get_distance(&p, map, player);
         ps[pcount] = p;
         pcount += 1;
       }
-      p.x += 1;
-    }
-    p.y += 1;
   }
   qsort(ps, pcount, sizeof(t_lp), &lpcmp);
   *count = pcount;
   return (ps);
 }
 
-bool    get_target_coord(t_context *context, int *targetx, int *targety)
+
+int    get_score(unsigned int g, unsigned int ecount, t_lp *enemy, t_context *context)
 {
-  int y = 0;
-  int x = 0;
-  char p;
+  unsigned int w = 0;
+  int tmpnbally = 0;
   t_lp	*ally;
   size_t	acount;
+
+  ally = find_all(context->map, &context->player, &isally, &acount);
+  while (w < acount)
+  {
+    if ((enemy[g].x - 15) < ally[w].x && (enemy[g].x + 15) > ally[w].x && (enemy[g].y - 15) < ally[w].y && (enemy[g].y + 15) > ally[w].y )
+      tmpnbally++;
+    w++;
+  }
+  w = 0;
+  while (w < ecount)
+  {
+    if ((enemy[g].x - 2) < enemy[w].x && (enemy[g].x + 2) > enemy[w].x && (enemy[g].y - 2) < enemy[w].y && (enemy[g].y + 2) > enemy[w].y )
+      tmpnbally -= 5;
+    w++;
+  }
+  return tmpnbally;
+}
+
+bool    get_target_coord(t_context *context, int *targetx, int *targety)
+{
+  unsigned int g = 0;
   t_lp	*enemy;
   size_t	ecount;
-  ally = find_all(context->map, &context->player, &isally, &acount);
-  enemy = find_all(context->map, &context->player, &isenemy, &ecount);
-  int g = 0;
-  int w = 0;
   int  nbally = -100;
   int tmpnbally = 0;
-  t_lp final;
+
+  enemy = find_all(context->map, &context->player, &isenemy, &ecount);
   if (ecount == 0)
     return false;
-  final.x = enemy[0].x;
-  final.y = enemy[0].y;
-
+  *targetx = enemy[0].x;
+  *targety = enemy[0].y;
   while (g < ecount)
   {
-    w = 0;
-    tmpnbally = 0;
-    while (w < acount)
-    {
-      if ((enemy[g].x - 15) < ally[w].x && (enemy[g].x + 15) > ally[w].x && (enemy[g].y - 15) < ally[w].y && (enemy[g].y + 15) > ally[w].y )
-      {
-        tmpnbally++;
-      }
-      w++;
-    }
-    w = 0;
-    while (w < ecount)
-    {
-      if ((enemy[g].x - 2) < enemy[w].x && (enemy[g].x + 2) > enemy[w].x && (enemy[g].y - 2) < enemy[w].y && (enemy[g].y + 2) > enemy[w].y )
-      {
-        tmpnbally -= 5;
-      }
-      w++;
-    }
+    tmpnbally = get_score(g, ecount, enemy, context);
     if (tmpnbally > nbally)
     {
-      fprintf(stderr, "FOUND\n");
       nbally = tmpnbally;
-      final.x = enemy[g].x;
-      final.y = enemy[g].y;
+      *targetx = enemy[g].x;
+      *targety = enemy[g].y;
     }
     g++;
   }
-  fprintf(stderr, "NB ALLY %d\n", nbally);
-  *targetx = (int)final.x;
-  *targety = (int)final.y;
   return true;
 }
 
@@ -120,37 +109,12 @@ bool    send_attck_msg(t_context *context)
 {
   int targetx;
   int targety;
-  int x = 0;
-  int y = 0;
   char *msg;
 
   if (!get_target_coord(context, &targetx, &targety))
     return false;
-
   asprintf(&msg, "%d;%d", targetx, targety);
-
-  struct timespec t;
-  //clock_gettime(CLOCK_REALTIME, &t);
-  t.tv_sec = 1;
-  t.tv_nsec = 0;
-  int ret = mq_timedsend(context->player.mq, msg, ft_strlen(msg), 0, &t);
-  if (ret == -1)
-    perror("mq_send");
-  /*while (y < MAP_HEIGHT)
-    {
-    x = 0;
-    while (x < MAP_WIDTH)
-    {
-    if (context->map[y][x] == context->player.id)
-    {
-    int ret = mq_send(context->player.mq, msg, ft_strlen(msg), 0);
-    if (ret == -1)
-    perror("mq_send");
-    }
-    x++;
-    }
-    y++;
-    }*/
+  mq_send(context->mqid, context->player.id, msg, ft_strlen(msg));
   return true;
 
 }
@@ -191,64 +155,54 @@ void    place_player(t_context *context)
 
 }
 
-void	iaduban(t_context *context)
+void    fill_coord(char *msg_ptr, int  *x_target, int *y_target)
 {
-  //  context->map[3][3] = 'E';
-  if (!send_attck_msg(context))
-    return;
-  char msg_ptr[1024];
-  struct timespec t;
-  //clock_gettime(CLOCK_REALTIME, &t);
-  t.tv_sec = 1;
-  t.tv_nsec = 0;
-  ssize_t ret;
-  ret = mq_timedreceive(context->player.mq, msg_ptr, 1024, NULL, &t);
-  if (ret == -1)
-  {
-    perror("mq_timedreceive");
-  }
-  else
-  {
-    msg_ptr[ret] = '\0';
-  }
   char **tab;
   tab = ft_strsplit(msg_ptr, ';');
+  *x_target = ft_atoi(tab[0]);
+  *y_target = ft_atoi(tab[1]);
+
+}
+
+void    move_x(t_context *context, int x_target)
+{
+  if (x_target > context->player.pos.x && context->map[context->player.pos.y][context->player.pos.x + 1] == MAP_EMPTYCASE)
+    context->player.pos.x += 1;
+  else if (x_target < context->player.pos.x && context->map[context->player.pos.y][context->player.pos.x - 1] == MAP_EMPTYCASE)
+    context->player.pos.x -= 1;
+  else
+    random_move(&context->player, context->map, &context->player.pos.x, &context->player.pos.y);
+}
+
+void    move_y(t_context *context, int y_target)
+{
+  if (y_target > context->player.pos.y && context->map[context->player.pos.y + 1][context->player.pos.x] == MAP_EMPTYCASE)
+    context->player.pos.y += 1;
+  else if (y_target < context->player.pos.y && context->map[context->player.pos.y - 1][context->player.pos.x] == MAP_EMPTYCASE)
+    context->player.pos.y -= 1;
+  else
+    random_move(&context->player, context->map, &context->player.pos.x, &context->player.pos.y);
+}
+
+void	ia(t_context *context)
+{
+  char msg_ptr[1024];
+  ssize_t ret;
   int x_target;
   int y_target;
-  x_target = ft_atoi(tab[0]);
-  y_target = ft_atoi(tab[1]);
+  if (!send_attck_msg(context))
+    return;
+  ret = mq_recv(context->mqid, context->player.id, msg_ptr, 1024);
+  if (ret == 0)
+  {
+    perror("receive msg:");
+    return ;
+  }
+  fill_coord(msg_ptr, &x_target, &y_target); 
   takeoff_player(context);
-  int diffy = abs(y_target - (int)context->player.pos.y);
-  int diffx = abs(x_target - (int)context->player.pos.x);
-  if (diffy > diffx)
-  {
-    if (y_target > context->player.pos.y && context->map[context->player.pos.y + 1][context->player.pos.x] == MAP_EMPTYCASE)
-    {
-      context->player.pos.y += 1;
-    }
-    else if (y_target < context->player.pos.y && context->map[context->player.pos.y - 1][context->player.pos.x] == MAP_EMPTYCASE)
-    {
-      context->player.pos.y -= 1;
-    }
-    else
-      random_move(&context->player, context->map, &context->player.pos.x, &context->player.pos.y);
-  }
+  if (abs(y_target - context->player.pos.y) > abs(x_target - context->player.pos.x))
+    move_y(context, y_target);
   else
-  {
-    if (x_target > context->player.pos.x && context->map[context->player.pos.y][context->player.pos.x + 1] == MAP_EMPTYCASE)
-    {
-      context->player.pos.x += 1;
-    }
-    else if (x_target < context->player.pos.x && context->map[context->player.pos.y][context->player.pos.x - 1] == MAP_EMPTYCASE)
-    {
-      context->player.pos.x -= 1;
-    }
-    else
-      random_move(&context->player, context->map, &context->player.pos.x, &context->player.pos.y);
-  }
-
-
+    move_x(context, x_target);
   place_player(context);
-
-
 }
