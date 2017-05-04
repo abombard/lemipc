@@ -22,11 +22,11 @@ SRC=\
 	player.c	\
 	utils.c		\
 	iabombard.c	\
-	iaduban.c	\
+	#iaduban.c	\
 
 OBJ=$(addprefix $(BUILD_DIR)/,$(SRC:.c=.o))
 
-all:$(BUILD_DIR) lemipc_iaduban lemipc_iabombard
+all:$(BUILD_DIR) lemipc_iabombard #lemipc_iaduban 
 
 $(BUILD_DIR):
 	@mkdir -p $@

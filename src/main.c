@@ -22,31 +22,45 @@ void	init_game(t_shm *shm)
 	}
 }
 
+void	shm_link(char **map, t_shm *shm)
+{
+	int		i;
+
+	i = 0;
+	while (i < MAP_HEIGHT)
+	{
+		map[i] = shm->m + (i + 1) * TRUEMAP_WIDTH + 1;
+		i += 1;
+	}
+}
+
 void	init(t_context *context)
 {
-	int		created;
-
-	shm_init(&context->shmfd, &created);
-	context->prime = created;
-	sem_attach(&context->sem_id, created);
-	sem_wait(context->sem_id);
-	shm_alloc(&context->shm, context->shmfd);
+	shm_get(&context->shmid, &context->creator);
+	shm_attach(&context->shm, context->shmid);
+	sem_get(&context->semid, context->creator);
+	sem_wait(context->semid);
 	shm_link(context->map, context->shm);
-	if (created)
+	if (context->creator)
 	{
 		init_game(context->shm);
 	}
-	sem_post(context->sem_id);
+	sem_post(context->semid);
+	mq_get(&context->mqid);
 }
 
-void	end(t_context *context)
+void	end(t_context *context, int last_process)
 {
-	shm_free(context->shm);
-	sem_detach(context->sem_id);
-	if (context->prime)
+	if (last_process)
 	{
-		sem_erase();
-		shm_erase();
+		mq_destroy(context->mqid);
+		sem_destroy(context->semid);
+		shm_detach(context->shm);
+		shm_destroy(context->shmid);
+	}
+	else
+	{
+		shm_detach(context->shm);
 	}
 }
 
@@ -165,7 +179,7 @@ void	loop(t_context *context)
 
 	while (!die)
 	{
-		sem_wait(context->sem_id);
+		sem_wait(context->semid);
 		if (context->shm->state != GAMESTATE_INIT &&
 			last_team_standing(context->map, &winner))
 			die = 1;
@@ -174,7 +188,7 @@ void	loop(t_context *context)
 			die = 1;
 		else if (context->shm->state == GAMESTATE_ON)
 			ia(context);
-		sem_post(context->sem_id);
+		sem_post(context->semid);
 		//sleep(5);
 		usleep(200000);
 	}
@@ -187,12 +201,12 @@ void	loop_display(t_context *context)
 
 	while (!die)
 	{
-		sem_wait(context->sem_id);
+		sem_wait(context->semid);
 		if (context->shm->state != GAMESTATE_INIT &&
 			last_team_standing(context->map, &winner))
 			die = 1;
 		display(context->shm);
-		sem_post(context->sem_id);
+		sem_post(context->semid);
 		usleep(200000);
 
 		//static int timeout = 10;
@@ -204,7 +218,9 @@ void	loop_display(t_context *context)
 int		main(int argc, char **argv)
 {
 	t_context	context;
+	int			last_process;
 
+	last_process = 0;
 	if (argc != 2)
 	{
 		printf("Usage: %s <Team Id>\n", argv[0]);
@@ -214,15 +230,15 @@ int		main(int argc, char **argv)
 	init(&context);
 	if (!ft_strcmp(argv[1], "start"))
 	{
-		sem_wait(context.sem_id);
+		sem_wait(context.semid);
 		context.shm->state = GAMESTATE_ON;
-		sem_post(context.sem_id);
+		sem_post(context.semid);
 	}
 	else if (!ft_strcmp(argv[1], "stop"))
 	{
-		sem_wait(context.sem_id);
+		sem_wait(context.semid);
 		context.shm->state = GAMESTATE_OVER;
-		sem_post(context.sem_id);
+		sem_post(context.semid);
 	}
 	else if (!ft_strcmp(argv[1], "display"))
 	{
@@ -230,14 +246,15 @@ int		main(int argc, char **argv)
 	}
 	else
 	{
-		sem_wait(context.sem_id);
+		sem_wait(context.semid);
 		player_init(&context.player, context.map, argv[1][0]);
-		sem_post(context.sem_id);
+		sem_post(context.semid);
+		context.player.mq = context.mqid;
 		loop(&context);
-		sem_wait(context.sem_id);
-		player_erase(&context.player, context.map);
-		sem_post(context.sem_id);
+		sem_wait(context.semid);
+		player_erase(&context.player, context.map, &last_process);
+		sem_post(context.semid);
 	}
-	end(&context);
+	end(&context, last_process);
 	return (0);
 }

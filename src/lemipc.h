@@ -6,14 +6,11 @@
 # include <stdio.h>
 # include <unistd.h>
 # include <stdlib.h>
-# include <sys/mman.h>
-# include <sys/stat.h>
-# include <fcntl.h>
-# include <sys/types.h>
-# include <semaphore.h>
-# include <mqueue.h>
 # include <errno.h>
 # include <time.h>
+
+# include <sys/ipc.h>
+# include <sys/msg.h>
 
 /*
 ** Game IPC shared between processes
@@ -48,24 +45,25 @@ typedef struct	s_shm
 	char			m[MAP_SIZE];
 }				t_shm;
 
-# define IPC_OBJPATH	"/ipc_objpath"
-# define IPC_SEMNAME	"/ipc_semname"
+# define IPCKEY		0xdeadbeef
 
-void	shm_init(int *shmfd, int *created);
-void	shm_erase(void);
+void	shm_get(int *shmid, int *created);
+void	shm_destroy(int shmid);
 
-void	shm_alloc(t_shm **shm, int shmfd);
-void	shm_free(t_shm *shm);
+void	shm_attach(t_shm **shmaddr, int shmid);
+void	shm_detach(void *shmaddr);
 
-void	shm_link(char *map[MAP_HEIGHT], t_shm *shm);
+void	sem_get(int *semid, int creator);
+void	sem_destroy(int semid);
 
-void	sem_attach(sem_t **sem_id, int prime);
-void	sem_detach(sem_t *sem_id);
-void	sem_erase(void);
+void	sem_wait(int semid);
+void	sem_post(int semid);
 
-void	mq_attach(char team, mqd_t *mq, int *created);
-void	mq_detach(mqd_t mq);
-void	mq_erase(char id);
+void	mq_get(int *mqid);
+void	mq_destroy(int mqid);
+
+void	mq_send(int mqid, int type, void *msg, size_t msgsize);
+ssize_t	mq_recv(int mqid, int type, char *msg, size_t msgsize);
 
 /*
 ** Player specific
@@ -94,23 +92,24 @@ typedef struct	s_player
 {
 	int		prime;
 	char	id;
-	mqd_t	mq;
+	int		mq;
 	t_pos	pos;
 	t_task	task;
 }				t_player;
 
 void	player_init(t_player *player, char *map[MAP_HEIGHT], char team);
-void	player_erase(t_player *player, char **map);
+void	player_erase(t_player *player, char **map, int *last_player);
 
 /*
 ** Process context
 */
 typedef struct	s_context
 {
-	int			prime;
-	int			shmfd;
+	int			creator;
+	int			shmid;
 	t_shm		*shm;
-	sem_t		*sem_id;
+	int			semid;
+	int			mqid;
 
 	char		*map[MAP_HEIGHT];
 

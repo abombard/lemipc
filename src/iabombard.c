@@ -128,40 +128,39 @@ void	moveto(char **map, t_player *player, t_pos *target)
 	player->pos.y = y1;
 }
 
-void	send_target(mqd_t mq, char *action, t_pos *target, int count)
+void	send_target(t_player *player, char *action, t_pos *target, int count)
 {
 	char			msg[1024];
 	ssize_t			size;
-	unsigned int	prio = 1;
-	struct timespec	timeout;
 	int				i;
 
 	size = snprintf(msg, sizeof(msg), "%s %u %u", action, target->x, target->y);
-	timeout.tv_sec = 1;
-	timeout.tv_nsec = 0;
 	i = 0;
 	while (i < count)
 	{
-		mq_timedsend(mq, msg, (unsigned long)size, prio, &timeout);
+		mq_send(player->mq, player->id, msg, size);
 		i += 1;
 	}
 }
 
-int		recv_target(mqd_t mq, t_pos *target, char *action)
+int		recv_target(t_player *player, t_pos *target, char *action)
 {
 	char			msg[1024];
 	ssize_t			size;
-	unsigned int	prio = 1;
-	struct timespec	timeout;
 
-	timeout.tv_sec = 1;
-	timeout.tv_nsec = 0;
-	size = mq_timedreceive(mq, msg, sizeof(msg), &prio, &timeout);
+	size = mq_recv(player->mq, player->id, msg, sizeof(msg));
 	if (size <= 0)
 		return (0);
-	msg[size] = '\0';
 	size = sscanf(msg, "%s %u %u", action, &target->x, &target->y);
 	return (1);
+}
+
+int		isbetween(t_pos *p1, t_pos *p2, t_pos *target)
+{
+	return ((p1->x <= target->x && target->x <= p2->x &&
+			p1->y <= target->y && target->y <= p2->y) ||
+			(p1->x >= target->x && target->x >= p2->x &&
+			 p1->y >= target->y && target->y >= p2->y));
 }
 
 void	iabombard(t_context *context)
@@ -176,25 +175,9 @@ void	iabombard(t_context *context)
 
 	t_pos	target;
 	char	action[1024];
-	int		done = 0;
 
-	if (recv_target(context->player.mq, &target, action))
+	if (recv_target(&context->player, &target, action))
 	{
-		if (!ft_strcmp(action, "help"))
-		{
-			done = 1;
-		}
-		else if (!ft_strcmp(action, "attack"))
-		{
-			if (distance(&context->player.pos, &target) < 5)
-				done = 1;
-			else
-				send_target(context->player.mq, "attack", &target, 1);
-		}
-	}
-	if (done)
-	{
-
 	}
 	else if (ecount == 1)
 	{
@@ -204,21 +187,48 @@ void	iabombard(t_context *context)
 	else
 	{
 		size_t	eclosecount = pcount_d(enemy, ecount, 10);
-		size_t	aclosecount = pcount_d(ally, acount, 5);
+		size_t	aclosecount = pcount_d(ally, acount, 6);
 
-		if (ecount && aclosecount > eclosecount)
+		int		done = 0;
+		if (eclosecount && aclosecount)
+		{
+			int		i = 0;
+			while (i < eclosecount)
+			{
+				t_pos	a, e;
+
+				e.x = enemy[i].x;
+				e.y = enemy[i].y;
+
+				int j = 0;
+				while (j < aclosecount)
+				{
+					a.x = ally[j].x;
+					a.y = ally[j].y;
+					if (isbetween(&context->player.pos, &a, &e))
+					{
+						target = e;
+						done = 1;
+						break ;
+					}
+					j += 1;
+				}
+				i += 1;
+			}
+		}
+		if (done)
+		{
+			printf("He's between!\n");
+		}
+		else if (ecount && (aclosecount > eclosecount || acount == aclosecount))
 		{
 			target.x = enemy[0].x;
 			target.y = enemy[0].y;
-
-			send_target(context->player.mq, "attack", &context->player.pos, 1);
 		}
-		else if (acount)
+		else if (acount && aclosecount != acount)
 		{
-			target.x = ally[0].x + rand() % 3 - 1;
-			target.y = ally[0].y + rand() % 3 - 1;
-
-			send_target(context->player.mq, "help", &context->player.pos, acount > 2 ? 2 : 1);
+			target.x = ally[aclosecount].x + rand() % 3 - 1;
+			target.y = ally[aclosecount].y + rand() % 3 - 1;
 		}
 		else if (ecount)
 		{

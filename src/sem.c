@@ -1,34 +1,76 @@
 #include "lemipc.h"
+#include <sys/ipc.h>
+#include <sys/sem.h>
 
-void	sem_attach(sem_t **sem_id, int prime)
+union semun {
+	int					val;
+	struct semid_ds		*buf;
+	unsigned short int	*array;
+	struct seminfo		*__buf;
+};
+
+static void	sem_init(int semid)
 {
-	sem_t	*id;
-	int		flg;
+	union semun			arg;
+	unsigned short int	value;
 
-	flg = prime ? O_CREAT | O_EXCL : 0;
-	id = sem_open(IPC_SEMNAME, flg, 0666, 1);
-	if (id == SEM_FAILED)
+	value = 1;
+	arg.array = &value;
+	if (semctl(semid, 0, SETALL, arg) == -1)
 	{
-		perror("sem_open");
+		perror("semctl SETALL");
 		exit(EXIT_FAILURE);
 	}
-	*sem_id = id;
 }
 
-void	sem_detach(sem_t *sem_id)
+void		sem_get(int *semid, int creator)
 {
-	if (sem_close(sem_id))
+	int		semflg;
+
+	semflg = creator ? IPC_CREAT | IPC_EXCL : 0;
+	*semid = semget(IPCKEY, 1, semflg | 0644);
+	if (*semid == -1)
 	{
-		perror("sem_close");
+		perror("semget");
+		exit(EXIT_FAILURE);
+	}
+	if (creator)
+		sem_init(*semid);
+}
+
+void	sem_destroy(int semid)
+{
+	if (semctl (semid, 1, IPC_RMID, 0) == -1)
+	{
+		perror("semctl IPC_RMID");
 		exit(EXIT_FAILURE);
 	}
 }
 
-void	sem_erase(void)
+void	sem_wait(int semid)
 {
-	if (sem_unlink(IPC_SEMNAME))
+	struct sembuf	op;
+
+	op.sem_num = 0;
+	op.sem_op = -1;
+	op.sem_flg = 0;
+	if (semop(semid, &op, 1))
 	{
-		perror("sem_unlink");
+		perror("semop");
+		exit(EXIT_FAILURE);
+	}
+}
+
+void	sem_post(int semid)
+{
+	struct sembuf	op;
+
+	op.sem_num = 0;
+	op.sem_op = 1;
+	op.sem_flg = 0;
+	if (semop(semid, &op, 1))
+	{
+		perror("semop");
 		exit(EXIT_FAILURE);
 	}
 }

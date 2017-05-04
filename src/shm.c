@@ -1,71 +1,59 @@
 #include "lemipc.h"
+#include <sys/ipc.h>
+#include <sys/shm.h>
 
-void	shm_init(int *shmfd, int *prime)
+void	shm_get(int *shmid, int *created)
 {
-	int		fd;
+	int		shmfd;
 
-	fd = shm_open(IPC_OBJPATH, O_CREAT | O_EXCL | O_RDWR, 0666);
-	if (fd < 0)
+	shmfd = shmget(IPCKEY, sizeof(t_shm), IPC_CREAT | IPC_EXCL | 0644);
+	if (shmfd != -1)
 	{
-		if (errno == EEXIST)
-			fd = shm_open(IPC_OBJPATH, O_RDWR, 0666);
-		if (fd < 0)
-		{
-			perror("shm_open");
-			exit(EXIT_FAILURE);
-		}
-		*prime = 0;
+		*shmid = shmfd;
+		*created = 1;
+		return ;
 	}
-	else
+	if (errno != EEXIST)
 	{
-		if (ftruncate(fd, sizeof(t_shm)))
-		{
-			perror("ftruncate");
-			exit(EXIT_FAILURE);
-		}
-		*prime = 1;
+		perror("shmget");
+		shm_destroy(*shmid);
+		exit(EXIT_FAILURE);
 	}
-	*shmfd = fd;
+	shmfd = shmget(IPCKEY, sizeof(t_shm), 0);
+	if (shmfd == -1)
+	{
+		perror("shmget");
+		shm_destroy(*shmid);
+		exit(EXIT_FAILURE);
+	}
+	*shmid = shmfd;
+	*created = 0;
 }
 
-void	shm_erase(void)
+void	shm_destroy(int shmid)
 {
-	if (shm_unlink(IPC_OBJPATH))
+	if (shmctl (shmid, IPC_RMID, 0) == -1)
 	{
-		perror("shm_unlink");
+		perror("shmctl IPC_RMID");
 		exit(EXIT_FAILURE);
 	}
 }
 
-void	shm_alloc(t_shm **shm, int shmfd)
+void	shm_attach(t_shm **shmaddr, int shmid)
 {
-	*shm = (t_shm *)mmap(NULL, sizeof(t_shm),
-		PROT_READ | PROT_WRITE, MAP_SHARED,
-		shmfd, 0);
-	if (*shm == MAP_FAILED)
+	*shmaddr = shmat(shmid, NULL, 0);
+	if (*shmaddr == (void *)-1)
 	{
-		perror("mmap");
+		perror("shmat");
 		exit(EXIT_FAILURE);
 	}
 }
 
-void	shm_free(t_shm *shm)
+void	shm_detach(void *shmaddr)
 {
-	if (munmap(shm, sizeof(t_shm)))
+	if (shmdt(shmaddr))
 	{
-		perror("munmap");
+		perror("shmdt");
 		exit(EXIT_FAILURE);
-	}
-}
-
-void	shm_link(char *map[MAP_HEIGHT], t_shm *shm)
-{
-	int		i;
-
-	i = 0;
-	while (i < MAP_HEIGHT)
-	{
-		map[i] = shm->m + (i + 1) * TRUEMAP_WIDTH + 1;
-		i += 1;
 	}
 }
