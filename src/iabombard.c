@@ -1,69 +1,6 @@
 #include "lemipc.h"
 
-typedef struct	s_lp
-{
-	unsigned int	x;
-	unsigned int	y;
-	unsigned int	d;
-	char			team;
-}				t_lp;
-
-int		lpcmp(void const *a, void const *b)
-{
-	t_lp	*p1;
-	t_lp	*p2;
-
-	p1 = (t_lp *)a;
-	p2 = (t_lp *)b;
-	return ((int)p1->d - (int)p2->d);
-}
-
 #include <math.h>
-unsigned int	distance(t_pos *p1, t_pos *p2)
-{
-	int	x = (int)p1->x - (int)p2->x;
-	int	y = (int)p1->y - (int)p2->y;
-	return ((unsigned int)sqrt(x * x + y * y));
-
-}
-
-t_lp	*find_all(char **map, t_player *player, int (*test)(t_player *, char), size_t *count)
-{
-	t_lp			*ps;
-	size_t			pcount;
-	t_lp			p;
-
-	ps = NULL;
-	pcount = 0;
-	p.y = 0;
-	while (p.y < MAP_HEIGHT)
-	{
-		p.x = 0;
-		while (p.x < MAP_WIDTH)
-		{
-			if (!(p.x == player->pos.x && p.y == player->pos.y) &&
-				test(player, map[p.y][p.x]))
-			{
-				if (!(ps = realloc(ps, (pcount + 1) * sizeof(t_lp))))
-				{
-					perror("realloc");
-					exit(EXIT_FAILURE);
-				}
-				p.team = map[p.y][p.x];
-				t_pos	tmp = { p.x, p.y };
-				p.d = distance(&player->pos, &tmp);
-				ps[pcount] = p;
-				pcount += 1;
-			}
-			p.x += 1;
-		}
-		p.y += 1;
-	}
-	qsort(ps, pcount, sizeof(t_lp), &lpcmp);
-	*count = pcount;
-	return (ps);
-}
-
 size_t	pcount_d(t_lp *ps, size_t pcount, size_t d)
 {
 	size_t	count;
@@ -203,50 +140,47 @@ void	iabombard(t_context *context)
 	t_pos	target;
 	char	action[1024];
 
-	if (recv_target(&context->player, &target, action))
+	size_t	eclosecount = pcount_d(enemy, ecount, 5);
+	size_t	aclosecount = pcount_d(ally, acount, 8);
+
+	target = easytarget(&context->player, ally, aclosecount, enemy, eclosecount);
+
+	eclosecount = pcount_d(enemy, ecount, 10);
+	aclosecount = pcount_d(ally, acount, 8);
+
+	if (target.x != 0 && target.y != 0)
+	{
+		//printf("He's between!\n");
+	}
+	else if (recv_target(&context->player, &target, action))
 	{
 		fprintf(stderr, "recv target ! %s %u %u\n", action, target.x, target.y);
 	}
+	else if (ecount && aclosecount == acount)
+	{
+		target.x = enemy[0].x;
+		target.y = enemy[0].y;
+
+		send_target(&context->player, "attack", &target, 1);
+	}
+	else if (ecount && aclosecount > eclosecount)
+	{
+		target.x = enemy[0].x;
+		target.y = enemy[0].y;
+	}
+	else if (acount && aclosecount != acount)
+	{
+		target.x = ally[aclosecount].x + rand() % 3 - 1;
+		target.y = ally[aclosecount].y + rand() % 3 - 1;
+	}
+	else if (ecount)
+	{
+		target.x = context->player.pos.x + (context->player.pos.x - enemy[0].x) % 1;
+		target.y = context->player.pos.y + (context->player.pos.y - enemy[0].y) % 1;
+	}
 	else
 	{
-		size_t	eclosecount = pcount_d(enemy, ecount, 5);
-		size_t	aclosecount = pcount_d(ally, acount, 10);
-
-		target = easytarget(&context->player, ally, aclosecount, enemy, eclosecount);
-
-		eclosecount = pcount_d(enemy, ecount, 10);
-		aclosecount = pcount_d(ally, acount, 8);
-
-		if (target.x != 0 && target.y != 0)
-		{
-			//printf("He's between!\n");
-		}
-		else if (ecount && aclosecount == acount)
-		{
-			target.x = enemy[0].x;
-			target.y = enemy[0].y;
-
-			send_target(&context->player, "attack", &target, 1);
-		}
-		else if (ecount && aclosecount > eclosecount)
-		{
-			target.x = enemy[0].x;
-			target.y = enemy[0].y;
-		}
-		else if (acount && aclosecount != acount)
-		{
-			target.x = ally[aclosecount].x + rand() % 3 - 1;
-			target.y = ally[aclosecount].y + rand() % 3 - 1;
-		}
-		else if (ecount)
-		{
-			target.x = context->player.pos.x + (context->player.pos.x - enemy[0].x) % 1;
-			target.y = context->player.pos.y + (context->player.pos.y - enemy[0].y) % 1;
-		}
-		else
-		{
-			fprintf(stderr, "Game Over ?\n");
-		}
+		fprintf(stderr, "Game Over ?\n");
 	}
 
 	moveto(context->map, &context->player, &target);

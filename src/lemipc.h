@@ -127,4 +127,16 @@ int		isenemy(t_player *player, char c);
 int		isoutofrange(unsigned int x, unsigned int y);
 void	random_move(t_player *player, char **map, unsigned int *x1, unsigned int *y1);
 
+typedef struct	s_lp
+{
+	unsigned int	x;
+	unsigned int	y;
+	unsigned int	d;
+	char			team;
+}				t_lp;
+
+int				lpcmp(void const *a, void const *b);
+unsigned int	distance(t_pos *p1, t_pos *p2);
+t_lp			*find_all(char **map, t_player *player, int (*test)(t_player *, char), size_t *count);
+
 #endif

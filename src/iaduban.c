@@ -1,14 +1,6 @@
 #include "lemipc.h"
-
-int		lpcmp(void const *a, void const *b)
-{
-  t_lp	*p1;
-  t_lp	*p2;
-
-  p1 = (t_lp *)a;
-  p2 = (t_lp *)b;
-  return ((int)p1->d - (int)p2->d);
-}
+#include <stdbool.h>
+#include <math.h>
 
 void    err_and_exit(char *msg)
 {
@@ -24,35 +16,6 @@ void get_distance(t_lp *p, char **map, t_player *player)
   p->d = (unsigned int)sqrt(x * x + y * y);
 
 }
-
-static t_lp	*find_all(char **map, t_player *player, int (*test)(t_player *, char), size_t *count)
-{
-  t_lp			*ps;
-  size_t			pcount;
-  t_lp			p;
-
-  ps = NULL;
-  pcount = 0;
-  p.y = -1;
-  while (++p.y < MAP_HEIGHT)
-  {
-    p.x = -1;
-    while (++p.x < MAP_WIDTH)
-      if (!(p.x == player->pos.x && p.y == player->pos.y) &&
-          test(player, map[p.y][p.x]))
-      {
-        if (!(ps = realloc(ps, (pcount + 1) * sizeof(t_lp))))
-          err_and_exit("realloc");
-        get_distance(&p, map, player);
-        ps[pcount] = p;
-        pcount += 1;
-      }
-  }
-  qsort(ps, pcount, sizeof(t_lp), &lpcmp);
-  *count = pcount;
-  return (ps);
-}
-
 
 int    get_score(unsigned int g, unsigned int ecount, t_lp *enemy, t_context *context)
 {
@@ -184,7 +147,7 @@ void    move_y(t_context *context, int y_target)
     random_move(&context->player, context->map, &context->player.pos.x, &context->player.pos.y);
 }
 
-void	ia(t_context *context)
+void	iaduban(t_context *context)
 {
   char msg_ptr[1024];
   ssize_t ret;
@@ -200,7 +163,7 @@ void	ia(t_context *context)
   }
   fill_coord(msg_ptr, &x_target, &y_target); 
   takeoff_player(context);
-  if (abs(y_target - context->player.pos.y) > abs(x_target - context->player.pos.x))
+  if (abs(y_target - (int)context->player.pos.y) > abs(x_target - (int)context->player.pos.x))
     move_y(context, y_target);
   else
     move_x(context, x_target);
