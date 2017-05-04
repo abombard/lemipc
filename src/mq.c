@@ -30,6 +30,7 @@ void	mq_send(int mqid, int type, void *msg, size_t msgsize)
 {
 	struct msgbuf	buf;
 
+	buf.mtype = type;
 	ft_memcpy(buf.mtext, msg, msgsize);
 	msgsnd(mqid, &buf, msgsize, IPC_NOWAIT);
 }
