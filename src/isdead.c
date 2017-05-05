@@ -1,3 +1,15 @@
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   isdead.c                                           :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: abombard <marvin@42.fr>                    +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2017/05/05 17:53:12 by abombard          #+#    #+#             */
+/*   Updated: 2017/05/05 17:57:06 by abombard         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
 #include "lemipc.h"
 #include "isdead.h"
 
@@ -17,7 +29,8 @@ static void		addenemy(t_enemies *enemies, char **map, t_pos p)
 	}
 	if (i != enemies->count)
 		return ;
-	enemies->arr = realloc(enemies->arr, sizeof(t_enemies) * (enemies->count + 1));
+	enemies->arr =
+		realloc(enemies->arr, sizeof(t_enemies) * (enemies->count + 1));
 	if (!enemies->arr)
 	{
 		perror("realloc");
@@ -28,7 +41,7 @@ static void		addenemy(t_enemies *enemies, char **map, t_pos p)
 	enemies->count += 1;
 }
 
-int		theygotcha(t_enemies *enemies)
+static int		theygotcha(t_enemies *enemies)
 {
 	unsigned int	i;
 
@@ -42,12 +55,12 @@ int		theygotcha(t_enemies *enemies)
 	return (0);
 }
 
-int		isdead(t_player *player, char **map)
+int				isdead(t_player *player, char **map)
 {
 	static int		delta[][2] = {
-		{ -1, -1 }, { -1,  0 }, { -1,  1 },
-		{  0, -1 }, {  0,  0 }, {  0,  1 },
-		{  1, -1 }, {  1,  0 }, {  1,  1 }
+		{ -1, -1 }, { -1, 0 }, { -1, 1 },
+		{ 0, -1 }, { 0, 0 }, { 0, 1 },
+		{ 1, -1 }, { 1, 0 }, { 1, 1 }
 	};
 	t_enemies		enemies;
 	t_pos			p;
@@ -70,4 +83,3 @@ int		isdead(t_player *player, char **map)
 	free(enemies.arr);
 	return (i);
 }
-

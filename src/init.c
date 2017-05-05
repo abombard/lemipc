@@ -1,3 +1,15 @@
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   init.c                                             :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: abombard <marvin@42.fr>                    +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2017/05/05 17:52:54 by abombard          #+#    #+#             */
+/*   Updated: 2017/05/05 17:54:05 by abombard         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
 #include "lemipc.h"
 
 static void		init_game(t_shm *shm)
@@ -8,7 +20,8 @@ static void		init_game(t_shm *shm)
 	shm->state = GAMESTATE_INIT;
 	ft_memset(shm->m, MAP_BORDERWIDTH, TRUEMAP_WIDTH - 1);
 	shm->m[TRUEMAP_WIDTH - 1] = '\n';
-	ft_memset(shm->m + sizeof(shm->m) - TRUEMAP_WIDTH, MAP_BORDERWIDTH, TRUEMAP_WIDTH - 1);
+	ft_memset(shm->m + sizeof(shm->m) - TRUEMAP_WIDTH, MAP_BORDERWIDTH,
+			TRUEMAP_WIDTH - 1);
 	shm->m[sizeof(shm->m) - 1] = '\n';
 	i = 0;
 	while (i < MAP_HEIGHT)

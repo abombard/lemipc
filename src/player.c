@@ -1,3 +1,15 @@
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   player.c                                           :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: abombard <marvin@42.fr>                    +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2017/05/05 18:11:47 by abombard          #+#    #+#             */
+/*   Updated: 2017/05/05 18:12:21 by abombard         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
 #include "lemipc.h"
 
 int		player_init(t_player *player, char *map[MAP_HEIGHT], char team)
@@ -7,8 +19,8 @@ int		player_init(t_player *player, char *map[MAP_HEIGHT], char team)
 	int		y;
 	int		timeout;
 
-	timeout = 100;
-	while (timeout)
+	timeout = 500;
+	while (--timeout)
 	{
 		x = rand() % MAP_WIDTH;
 		y = rand() % MAP_HEIGHT;
@@ -17,7 +29,6 @@ int		player_init(t_player *player, char *map[MAP_HEIGHT], char team)
 			map[y][x] = team;
 			break ;
 		}
-		timeout -= 1;
 	}
 	if (!timeout)
 	{

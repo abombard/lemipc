@@ -1,11 +1,22 @@
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   sem.c                                              :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: abombard <marvin@42.fr>                    +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2017/05/05 18:14:24 by abombard          #+#    #+#             */
+/*   Updated: 2017/05/05 18:14:42 by abombard         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
 #include "lemipc.h"
-#include "sem.h"
 #include <sys/ipc.h>
 #include <sys/sem.h>
 
 static void	sem_init(int semid)
 {
-	union u_semun		arg;
+	semun_t				arg;
 	unsigned short int	value;
 
 	value = 1;
@@ -32,7 +43,7 @@ void		sem_get(int *semid, int creator)
 		sem_init(*semid);
 }
 
-void	sem_destroy(int semid)
+void		sem_destroy(int semid)
 {
 	if (semctl(semid, 1, IPC_RMID, 0) == -1)
 	{
@@ -41,7 +52,7 @@ void	sem_destroy(int semid)
 	}
 }
 
-void	sem_wait(int semid)
+void		sem_wait(int semid)
 {
 	struct sembuf	op;
 
@@ -50,12 +61,11 @@ void	sem_wait(int semid)
 	op.sem_flg = 0;
 	if (semop(semid, &op, 1))
 	{
-		perror("semop");
 		exit(EXIT_FAILURE);
 	}
 }
 
-void	sem_post(int semid)
+void		sem_post(int semid)
 {
 	struct sembuf	op;
 
@@ -64,7 +74,6 @@ void	sem_post(int semid)
 	op.sem_flg = 0;
 	if (semop(semid, &op, 1))
 	{
-		perror("semop");
 		exit(EXIT_FAILURE);
 	}
 }

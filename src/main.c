@@ -1,3 +1,15 @@
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   main.c                                             :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: abombard <marvin@42.fr>                    +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2017/05/05 18:10:19 by abombard          #+#    #+#             */
+/*   Updated: 2017/05/05 18:10:22 by abombard         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
 #include "lemipc.h"
 
 void	loop(t_context *context)
@@ -30,7 +42,7 @@ void	launcher(t_context *context, char team, int *over)
 	success = player_init(&context->player, context->map, team);
 	sem_post(context->semid);
 	if (!success)
-		exit(EXIT_FAILURE);
+		return ;
 	loop(context);
 	sem_wait(context->semid);
 	player_erase(&context->player, context->map);

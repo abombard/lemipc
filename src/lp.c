@@ -1,3 +1,15 @@
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   lp.c                                               :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: abombard <marvin@42.fr>                    +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2017/05/05 18:13:43 by abombard          #+#    #+#             */
+/*   Updated: 2017/05/05 18:14:12 by abombard         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
 #include "lemipc.h"
 #include <math.h>
 
@@ -32,7 +44,8 @@ static t_lp			*psgrow(t_lp *arr, size_t size)
 	return (arr);
 }
 
-static t_lp			newp(t_player *player, char **map, unsigned int x, unsigned int y)
+static t_lp			newp(t_player *player, char **map,
+						unsigned int x, unsigned int y)
 {
 	t_lp	p;
 	t_pos	pos;
@@ -46,7 +59,8 @@ static t_lp			newp(t_player *player, char **map, unsigned int x, unsigned int y)
 	return (p);
 }
 
-t_lp	*find_all(char **map, t_player *player, int (*test)(t_player *, char), size_t *count)
+t_lp				*find_all(char **map, t_player *player,
+		int (*test)(t_player *, char), size_t *count)
 {
 	t_lp			*ps;
 	size_t			pcount;

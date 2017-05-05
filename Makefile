@@ -6,7 +6,7 @@ NAME=lemipc
 
 DIR_LIBFT=libs/libft
 LIBS_BIN=$(DIR_LIBFT)/libft.a
-LIBS=-L libs/libft/ -lft -L -lpthread -lrt -lm
+LIBS=-L libs/libft/ -lft -lpthread -lm
 
 SRC_DIR=src
 INCLUDES=-I ./ -I$(SRC_DIR) -I $(DIR_LIBFT)
@@ -14,24 +14,25 @@ INCLUDES=-I ./ -I$(SRC_DIR) -I $(DIR_LIBFT)
 BUILD_DIR=__build
 
 SRC=\
-	main.c			\
-	shm.c			\
-	sem.c			\
-	mq.c			\
-	chan.c			\
-	player.c		\
-	init.c			\
-	end.c			\
-	display.c		\
-	is.c			\
-	isdead.c		\
-	ateamwin.c		\
-	gameisover.c	\
-	moverand.c		\
-	moveto.c		\
-	lp.c			\
-	iabombard.c		\
-	iaduban.c		\
+	main.c				\
+	shm.c				\
+	sem.c				\
+	mq.c				\
+	chan.c				\
+	player.c			\
+	init.c				\
+	end.c				\
+	display.c			\
+	is.c				\
+	isdead.c			\
+	ateamwin.c			\
+	gameisover.c		\
+	moverand.c			\
+	moveto.c			\
+	lp.c				\
+	iabombard.c			\
+	iaduban_movements.c	\
+	iaduban.c			\
 
 OBJ=$(addprefix $(BUILD_DIR)/,$(SRC:.c=.o))
 
