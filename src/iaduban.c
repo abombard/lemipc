@@ -134,7 +134,7 @@ void    move_x(t_context *context, int x_target)
   else if (x_target < context->player.pos.x && context->map[context->player.pos.y][context->player.pos.x - 1] == MAP_EMPTYCASE)
     context->player.pos.x -= 1;
   else
-    random_move(&context->player, context->map, &context->player.pos.x, &context->player.pos.y);
+    moverand(&context->player, context->map, &context->player.pos.x, &context->player.pos.y);
 }
 
 void    move_y(t_context *context, int y_target)
@@ -144,7 +144,7 @@ void    move_y(t_context *context, int y_target)
   else if (y_target < context->player.pos.y && context->map[context->player.pos.y - 1][context->player.pos.x] == MAP_EMPTYCASE)
     context->player.pos.y -= 1;
   else
-    random_move(&context->player, context->map, &context->player.pos.x, &context->player.pos.y);
+    moverand(&context->player, context->map, &context->player.pos.x, &context->player.pos.y);
 }
 
 void	iaduban(t_context *context)

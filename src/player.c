@@ -1,12 +1,14 @@
 #include "lemipc.h"
 
-void	player_init(t_player *player, char *map[MAP_HEIGHT], char team)
+int		player_init(t_player *player, char *map[MAP_HEIGHT], char team)
 {
 	int		created;
 	int		x;
 	int		y;
+	int		timeout;
 
-	while (1)
+	timeout = 100;
+	while (timeout)
 	{
 		x = rand() % MAP_WIDTH;
 		y = rand() % MAP_HEIGHT;
@@ -15,30 +17,20 @@ void	player_init(t_player *player, char *map[MAP_HEIGHT], char team)
 			map[y][x] = team;
 			break ;
 		}
+		timeout -= 1;
+	}
+	if (!timeout)
+	{
+		fprintf(stderr, "Error: Couldnt position the new player on the map\n");
+		return (0);
 	}
 	player->id = team;
 	player->pos.x = (unsigned int)x;
 	player->pos.y = (unsigned int)y;
-	player->task.id = PLAYERTASK_UNDEFINED;
+	return (1);
 }
 
-void	player_erase(t_player *player, char **map, int *last_player)
+void	player_erase(t_player *player, char **map)
 {
-	int		i;
-	int		j;
-
 	map[player->pos.y][player->pos.x] = MAP_EMPTYCASE;
-	*last_player = 1;
-	i = 0;
-	while (i < MAP_HEIGHT)
-	{
-		j = 0;
-		while (j < MAP_WIDTH)
-		{
-			if (!isempty(map[i][j]))
-				*last_player = 0;
-			j += 1;
-		}
-		i += 1;
-	}
 }

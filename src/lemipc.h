@@ -75,30 +75,15 @@ typedef struct	s_pos
 	unsigned int	y;
 }				t_pos;
 
-typedef struct	s_task
-{
-	enum
-	{
-		PLAYERTASK_UNDEFINED = 0,
-		PLAYERTASK_ATTACK
-	}			id;
-	union
-	{
-		t_pos	attack;
-	}			un;
-}				t_task;
-
 typedef struct	s_player
 {
 	int		prime;
 	char	id;
-	int		mq;
 	t_pos	pos;
-	t_task	task;
 }				t_player;
 
-void	player_init(t_player *player, char *map[MAP_HEIGHT], char team);
-void	player_erase(t_player *player, char **map, int *last_player);
+int		player_init(t_player *player, char **map, char team);
+void	player_erase(t_player *player, char **map);
 
 /*
 ** Process context
@@ -118,14 +103,26 @@ typedef struct	s_context
 	t_player	player;
 }				t_context;
 
-void	iaduban(t_context *context);
-void	iabombard(t_context *context);
+void	init(t_context *context, char *algo);
+void	end(t_context *context, int last_process);
 
 int		isempty(char c);
 int		isally(t_player *player, char c);
 int		isenemy(t_player *player, char c);
 int		isoutofrange(unsigned int x, unsigned int y);
-void	random_move(t_player *player, char **map, unsigned int *x1, unsigned int *y1);
+int		isdead(t_player *player, char **map);
+
+int		ateamwin(char **map, char *winner);
+int		gameisover(char **map);
+
+void	moveto(char **map, t_player *player, t_pos *target);
+void	moverand(t_player *player, char **map, unsigned int *x1, unsigned int *y1);
+
+void	send_target(int mqid, int team, char *action, t_pos *target);
+int		recv_target(int mqid, int team, char *action, t_pos *target);
+
+void	iaduban(t_context *context);
+void	iabombard(t_context *context);
 
 typedef struct	s_lp
 {
@@ -135,8 +132,8 @@ typedef struct	s_lp
 	char			team;
 }				t_lp;
 
-int				lpcmp(void const *a, void const *b);
-unsigned int	distance(t_pos *p1, t_pos *p2);
 t_lp			*find_all(char **map, t_player *player, int (*test)(t_player *, char), size_t *count);
+
+void	loop_display(t_context *context);
 
 #endif

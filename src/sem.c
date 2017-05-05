@@ -1,17 +1,11 @@
 #include "lemipc.h"
+#include "sem.h"
 #include <sys/ipc.h>
 #include <sys/sem.h>
 
-union semun {
-	int					val;
-	struct semid_ds		*buf;
-	unsigned short int	*array;
-	struct seminfo		*__buf;
-};
-
 static void	sem_init(int semid)
 {
-	union semun			arg;
+	union u_semun		arg;
 	unsigned short int	value;
 
 	value = 1;
@@ -40,7 +34,7 @@ void		sem_get(int *semid, int creator)
 
 void	sem_destroy(int semid)
 {
-	if (semctl (semid, 1, IPC_RMID, 0) == -1)
+	if (semctl(semid, 1, IPC_RMID, 0) == -1)
 	{
 		perror("semctl IPC_RMID");
 		exit(EXIT_FAILURE);

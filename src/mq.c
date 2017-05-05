@@ -1,11 +1,8 @@
 #include "lemipc.h"
+#include "mq.h"
+
 #include <sys/ipc.h>
 #include <sys/msg.h>
-
-struct msgbuf {
-	long mtype;       /* message type, must be > 0 */
-	char mtext[128];    /* message data */
-};
 
 void	mq_get(int *mqid)
 {
@@ -28,7 +25,7 @@ void	mq_destroy(int mqid)
 
 void	mq_send(int mqid, int type, void *msg, size_t msgsize)
 {
-	struct msgbuf	buf;
+	struct s_msgbuf	buf;
 
 	buf.mtype = type;
 	ft_memcpy(buf.mtext, msg, msgsize);
@@ -37,7 +34,7 @@ void	mq_send(int mqid, int type, void *msg, size_t msgsize)
 
 ssize_t	mq_recv(int mqid, int type, char *msg, size_t msgsize)
 {
-	struct msgbuf	buf;
+	struct s_msgbuf	buf;
 	ssize_t			size;
 
 	size = msgrcv(mqid, &buf, msgsize, type, IPC_NOWAIT);
