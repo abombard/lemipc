@@ -79,7 +79,7 @@ int				isdead(t_player *player, char **map)
 		}
 		i += 1;
 	}
-	i = theygotcha(&enemies);
+	i = (unsigned int)theygotcha(&enemies);
 	free(enemies.arr);
-	return (i);
+	return ((int)i);
 }

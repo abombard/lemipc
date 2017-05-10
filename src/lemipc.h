@@ -40,10 +40,6 @@
 # define MAP_BORDERHEIGHT	'|'
 # define MAP_EMPTYCASE	' '
 
-# define MQNAME_BASIS				"/lemipcteam"
-# define MQNAME_BASIS_SIZE	(sizeof("/lemipcteam") - 1)
-# define MQNAME_SIZE		(MQNAME_BASIS_SIZE + 1)
-
 typedef enum	e_gamestate
 {
 	GAMESTATE_INIT = 0,
@@ -57,7 +53,7 @@ typedef struct	s_shm
 	char			m[MAP_SIZE];
 }				t_shm;
 
-# define IPCKEY		0xdeadbeef
+# define IPCKEY		(key_t)0xdeadbeef
 
 void			shm_get(int *shmid, int *created);
 void			shm_destroy(int shmid);
@@ -114,6 +110,8 @@ typedef struct	s_context
 
 	t_player	player;
 }				t_context;
+
+void			sighandler(int signum);
 
 void			init(t_context *context, char *algo);
 void			end(t_context *context, int last_process);

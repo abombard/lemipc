@@ -13,7 +13,7 @@
 #include "lemipc.h"
 #include <stdbool.h>
 
-int			get_score(unsigned int g, unsigned int ecount, t_lp *enemy,
+int			get_score(int g, size_t ecount, t_lp *enemy,
 		t_context *context)
 {
 	unsigned int	w;
@@ -43,9 +43,9 @@ int			get_score(unsigned int g, unsigned int ecount, t_lp *enemy,
 	return (tmpnbally);
 }
 
-bool		get_target_coord(t_context *context, int *targetx, int *targety)
+bool		get_target_coord(t_context *context, size_t *targetx, size_t *targety)
 {
-	unsigned int	g;
+	int				g;
 	t_lp			*enemy;
 	size_t			ecount;
 	int				nbally;
@@ -59,7 +59,7 @@ bool		get_target_coord(t_context *context, int *targetx, int *targety)
 		return (false);
 	*targetx = enemy[0].x;
 	*targety = enemy[0].y;
-	while (++g < ecount)
+	while (++g < (int)ecount)
 	{
 		tmpnbally = get_score(g, ecount, enemy, context);
 		if (tmpnbally > nbally)
@@ -74,14 +74,14 @@ bool		get_target_coord(t_context *context, int *targetx, int *targety)
 
 bool		send_attck_msg(t_context *context)
 {
-	int		targetx;
-	int		targety;
+	size_t	targetx;
+	size_t	targety;
 	char	*msg;
 
 	if (!get_target_coord(context, &targetx, &targety))
 		return (false);
-	asprintf(&msg, "%d;%d", targetx, targety);
-	mq_send(context->mqid, context->player.id, msg, ft_strlen(msg));
+	asprintf(&msg, "%zu;%zu", targetx, targety);
+	mq_send(context->mqid, context->player.id, msg, (size_t)ft_strlen(msg));
 	return (true);
 }
 

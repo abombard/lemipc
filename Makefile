@@ -1,6 +1,6 @@
 CC=clang
 FLAGS42=-Wall -Wextra -Werror -Wconversion
-FLAGS=
+FLAGS=$(FLAGS42)
 
 NAME=lemipc
 
@@ -33,6 +33,7 @@ SRC=\
 	iabombard.c			\
 	iaduban_movements.c	\
 	iaduban.c			\
+	sig.c
 
 OBJ=$(addprefix $(BUILD_DIR)/,$(SRC:.c=.o))
 

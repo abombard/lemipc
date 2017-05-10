@@ -27,13 +27,13 @@ static t_pos	movetox(char **map, t_player *player, t_pos *target)
 	d.x = 0;
 	d.y = 0;
 	if (x2 < x1 && isempty(map[y1][x1 - 1]))
-		d.x = -1;
+		d.x = x1 - 1;
 	else if (x2 > x1 && isempty(map[y1][x1 + 1]))
-		d.x = 1;
+		d.x = x1 + 1;
 	else if (y2 < y1 && isempty(map[y1 - 1][x1]))
-		d.y = -1;
+		d.y = y1 - 1;
 	else if (y2 > y1 && isempty(map[y1 + 1][x1]))
-		d.y = 1;
+		d.y = y1 + 1;
 	return (d);
 }
 
@@ -52,13 +52,13 @@ static t_pos	movetoy(char **map, t_player *player, t_pos *target)
 	d.x = 0;
 	d.y = 0;
 	if (y2 < y1 && isempty(map[y1 - 1][x1]))
-		d.y = -1;
+		d.y = y1 - 1;
 	else if (y2 > y1 && isempty(map[y1 + 1][x1]))
-		d.y = 1;
+		d.y = y1 + 1;
 	else if (x2 < x1 && isempty(map[y1][x1 - 1]))
-		d.x = -1;
+		d.x = x1 - 1;
 	else if (x2 > x1 && isempty(map[y1][x1 + 1]))
-		d.x = 1;
+		d.x = x1 + 1;
 	return (d);
 }
 
@@ -79,11 +79,6 @@ void			moveto(char **map, t_player *player, t_pos *target)
 	}
 	if (!d.x && !d.y)
 		moverand(player, map, &d.x, &d.y);
-	else
-	{
-		d.x += player->pos.x;
-		d.y += player->pos.y;
-	}
 	map[d.y][d.x] = player->id;
 	player->pos = d;
 }

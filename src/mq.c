@@ -50,9 +50,9 @@ ssize_t	mq_recv(int mqid, int type, char *msg, size_t msgsize)
 	ssize_t			size;
 
 	size = msgrcv(mqid, &buf, msgsize, type, IPC_NOWAIT);
-	if (size <= 0 || size >= msgsize)
+	if (size <= 0 || (size_t)size >= msgsize)
 		return (0);
-	ft_memcpy(msg, buf.mtext, size);
+	ft_memcpy(msg, buf.mtext, (size_t)size);
 	msg[size] = '\0';
 	return (size);
 }

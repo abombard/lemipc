@@ -38,6 +38,7 @@ void	launcher(t_context *context, char team, int *over)
 {
 	int		success;
 
+	signal(SIGINT, &sighandler);
 	sem_wait(context->semid);
 	success = player_init(&context->player, context->map, team);
 	sem_post(context->semid);
@@ -81,11 +82,12 @@ int		main(int argc, char **argv)
 
 	if (argc != 2 && argc != 3)
 	{
-		printf("Usage: %s <Team Id> [algo:0|1|2]\n", argv[0]);
+		printf("Usage: %s <Team Id> [algo:1|2]\n", argv[0]);
 		return (2);
 	}
 	srand((unsigned int)time(NULL));
 	init(&context, argv[2]);
+	over = 0;
 	if (ft_strlen(argv[1]) > 1)
 		command(&context, argv[1]);
 	else

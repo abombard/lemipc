@@ -44,8 +44,8 @@ static int		easytarget(t_pos *target, t_pos *ppos,
 {
 	t_pos	a;
 	t_pos	e;
-	int		i;
-	int		j;
+	size_t	i;
+	size_t	j;
 
 	enemy->close = pcount_d(enemy->arr, enemy->total, 5);
 	ally->close = pcount_d(ally->arr, ally->total, 8);

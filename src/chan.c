@@ -18,7 +18,12 @@ void	send_target(int mqid, int team, char *action, t_pos *target)
 	ssize_t			size;
 
 	size = snprintf(msg, sizeof(msg), "%s %u %u", action, target->x, target->y);
-	mq_send(mqid, team, msg, size);
+	if (size < 0 || (unsigned long)size >= sizeof(msg))
+	{
+		perror("snprintf");
+		exit(EXIT_FAILURE);
+	}
+	mq_send(mqid, team, msg, (size_t)size);
 }
 
 int		recv_target(int mqid, int team, char *action, t_pos *target)

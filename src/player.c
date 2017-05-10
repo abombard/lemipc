@@ -14,7 +14,6 @@
 
 int		player_init(t_player *player, char *map[MAP_HEIGHT], char team)
 {
-	int		created;
 	int		x;
 	int		y;
 	int		timeout;
