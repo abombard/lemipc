@@ -28,8 +28,8 @@
 ** Game IPC shared between processes
 */
 
-# define MAP_WIDTH		100
-# define MAP_HEIGHT		40
+# define MAP_WIDTH		60
+# define MAP_HEIGHT		20
 
 # define TRUEMAP_HEIGHT	(MAP_HEIGHT + 2)
 # define TRUEMAP_WIDTH	(MAP_WIDTH + 3)

@@ -43,7 +43,8 @@ int			get_score(int g, size_t ecount, t_lp *enemy,
 	return (tmpnbally);
 }
 
-bool		get_target_coord(t_context *context, size_t *targetx, size_t *targety)
+bool		get_target_coord(t_context *context,
+		size_t *targetx, size_t *targety)
 {
 	int				g;
 	t_lp			*enemy;
